@@ -1,0 +1,11 @@
+add_newline = false
+
+[line_break]
+disabled = true
+
+[character]
+success_symbol = "[➜](green) "
+error_symbol = "[✗](red) "
+
+[memory_usage]
+disabled = false
