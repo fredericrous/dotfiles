@@ -1,0 +1,110 @@
+colors:
+  # Theme colors
+  background_color: '1a1a1a'
+  black: "000000"
+  darkorange: "FF9400"
+  amber: "FFC100"
+  vermilion: "FF4B00"
+  alpine: "BF9C30"
+  christine: "BF5B30"
+  fire: "A63000"
+  kourkinova: "BF5B30"
+  chardonnay: "FFC373"
+
+core:
+  regular_file:
+    foreground: amber
+
+  directory:
+    foreground: darkorange
+
+  executable_file:
+    foreground: vermilion
+    font-style: bold
+
+  symlink:
+    foreground: alpine
+
+  broken_symlink:
+    foreground: black
+    background: fire
+  missing_symlink_target:
+    foreground: black
+    background: fire
+
+  fifo:
+    foreground: black
+    background: darkorange
+
+  socket:
+    foreground: black
+    background: alpine
+
+  character_device:
+    foreground: alpine
+    background: kourkinova
+
+  block_device:
+    foreground: darkorange
+    background: kourkinova
+
+  normal_text:
+    {}
+
+  sticky:
+    {}
+
+  sticky_other_writable:
+    {}
+
+  other_writable:
+    {}
+
+text:
+  special:
+    foreground: chardonnay
+    font-style: bold
+
+  todo:
+    font-style: bold
+
+  licenses:
+    foreground: chardonnay
+
+  configuration:
+    foreground: amber
+    font-style: bold
+
+  other:
+    foreground: chardonnay
+
+markup:
+  foreground: chardonnay
+
+programming:
+  source:
+    foreground: vermilion
+
+  tooling:
+    foreground: christine
+
+    continuous-integration:
+      foreground: chardonnay
+
+media:
+  foreground: vermilion
+
+office:
+  foreground: chardonnay
+
+archives:
+  foreground: alpine
+  font-style: underline
+
+executable:
+  foreground: alpine
+  font-style: bold
+
+unimportant:
+  foreground: christine
+  font-style: faint
