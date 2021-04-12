@@ -1,11 +1,133 @@
-add_newline = false
+#add_newline = false
 
-[line_break]
-disabled = true
+#[line_break]
+#disabled = true
+
+[aws]
+style = "bg:#f9a600 fg:black"
+symbol = " "
+format = "[](fg:black bg:#f9a600)[$symbol$profile]($style)[](fg:#f9a600 bg:black)"
 
 [character]
-success_symbol = "[➜](green) "
-error_symbol = "[✗](red) "
+success_symbol = "[❯](#ff9400)"
+error_symbol = "[✗](#ff4b00)"
 
-[memory_usage]
+[cmd_duration]
+style = "#f9a600"
+format = "[](fg:black bg:#f9a600)[祥$duration](bg:$style fg:black)[](fg:$style)"
+
+[custom.git_status_return]
+format = "\b\b[](fg:#c05303)"
+when = "git st 2>/dev/null; test $status -ne 0"
+
+[directory]
+style = "#c05303"
+truncate_to_repo = false
+fish_style_pwd_dir_length = 1
+format = "[](fg:black bg:#c05303)[$path[$read_only]($read_only_style)](bg:$style fg:black)[](fg:$style)"
+
+[docker_context]
+style = "fg:black bg:#eb9606"
+symbol = "🐳  "
+format = "[](fg:black bg:#eb9606)[$symbol$context]($style)[](fg:#eb9606)"
+
+[git_branch]
+style = "#d8712c"
+format = "[](fg:black bg:$style)[ $symbol$branch](fg:black bg:$style)[](fg:$style)"
+
+[git_state]
+style = "#d8712c"
+format = "\b\b[ \\($state( $progress_current/$progress_total)\\)](fg:white bg:$style)[](fg:$style)"
+
+[git_status]
+style = "#d8712c"
+format = "\b[ ](bg:$style)($conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind\b)[](fg:$style)"
+conflicted = "[  ](fg:88)[   ${count} ](fg:white)[ ](fg:88)"
+staged = "[ $count ](fg:black bg:#d8712c)"
+modified = "[ ${count} ](fg:black bg:#d8712c)"
+renamed = "[ ${count} ](fg:black bg:#d8712c)"
+deleted = "[ ${count} ](fg:black bg:#d8712c)"
+untracked = "[?${count} ](fg:black bg:#d8712c)"
+stashed = "[ ${count} ](fg:black bg:#d8712c)"
+ahead = "[  ${count} ](fg:purple bg:#d8712c)"
+behind = "[  ${count} ](fg:yellow bg:#d8712c)"
+diverged = "[ ](fg:88)[  נּ ](fg:white bg:88)[ ${ahead_count} ](fg:purple)[ ${behind_count} ](fg:yellow)[ ](fg:88)"
+
+[golang]
+symbol = "ﳑ "
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[helm]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol($version)]($style)[](fg:#eb9606)"
+
+[java]
+symbol = " "
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[kotlin]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[kubernetes]
+format = "[](fg:black bg:#ad4007)[$symbol$context](fg:black bg:#ad4007)[](fg:#ad4007)"
 disabled = false
+
+#[memory_usage]
+#style = "#f9a600"
+#symbol = " "
+#format = "[](fg:black bg:#f9a600)[$symbol$ram](bg:$style fg:black)[](fg:$style)"
+#threshold = 95
+#disabled = false
+
+[nodejs]
+style = "green"
+format = "[](fg:black bg:#eb9606)[$symbol($version)](fg:black bg:#eb9606)[](fg:#eb9606)"
+
+[ocaml]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[package]
+disabled = true
+
+[php]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[python]
+symbol = " "
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$pyenv_prefix$version$virtualenv]($style)[](fg:#eb9606)"
+
+[ruby]
+symbol = " "
+format = "[](fg:black bg:#eb9606)[$symbol$version](fg:black bg:#eb9606)(fg:black bg:#eb9606)[](fg:#eb9606)"
+
+[rust]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[scala]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[swift]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[shlvl]
+symbol = " "
+style = "fg:black bg:#ad4007"
+format = "[](fg:black bg:#ad4007)[$symbol$shlvl]($style)[](fg:#ad4007)"
+disabled = false
+
+[terraform]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$workspace]($style)[](fg:#eb9606)"
+
+[vagrant]
+style = "fg:black bg:#eb9606"
+format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"

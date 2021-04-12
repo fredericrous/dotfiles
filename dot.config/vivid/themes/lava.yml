@@ -1,7 +1,11 @@
 colors:
-  # Theme colors
+  base01: '6b3608'
+  base0: '839496'
+  base2: 'eee8d5'
+  yellow: 'b58900'
   background_color: '1a1a1a'
   black: "000000"
+  orangedir: "e06206"
   darkorange: "FF9400"
   amber: "FFC100"
   vermilion: "FF4B00"
@@ -13,42 +17,54 @@ colors:
 
 core:
   regular_file:
-    foreground: amber
+    foreground: base0
 
   directory:
-    foreground: darkorange
+    foreground: orangedir
+    font-style: bold
 
   executable_file:
     foreground: vermilion
     font-style: bold
 
   symlink:
-    foreground: alpine
+    foreground: orangedir
+    font-style: underline
 
   broken_symlink:
-    foreground: black
-    background: fire
+    foreground: background_color
+    background: kourkinova
+    font-style: bold
+
   missing_symlink_target:
-    foreground: black
-    background: fire
+    foreground: background_color
+    background: kourkinova
+    font-style: bold
 
   fifo:
-    foreground: black
-    background: darkorange
+    foreground: background_color
+    background: kourkinova
+    font-style: bold
 
   socket:
-    foreground: black
-    background: alpine
+    foreground: background_color
+    background: kourkinova
+    font-style: bold
 
   character_device:
-    foreground: alpine
-    background: kourkinova
+    foreground: yellow
+    background: base2
+    font-style: bold
 
   block_device:
-    foreground: darkorange
-    background: kourkinova
+    foreground: yellow
+    background: base2
+    font-style: bold
 
   normal_text:
+    foreground: base0
+
+  other_writable:
     {}
 
   sticky:
@@ -57,33 +73,30 @@ core:
   sticky_other_writable:
     {}
 
-  other_writable:
-    {}
-
 text:
   special:
-    foreground: chardonnay
-    font-style: bold
+    foreground: amber
 
   todo:
+    foreground: amber
     font-style: bold
 
   licenses:
-    foreground: chardonnay
+    foreground: christine
 
   configuration:
     foreground: amber
     font-style: bold
 
   other:
-    foreground: chardonnay
+    foreground: darkorange
 
 markup:
-  foreground: chardonnay
+  foreground: amber
 
 programming:
   source:
-    foreground: vermilion
+    foreground: amber
 
   tooling:
     foreground: christine
@@ -92,19 +105,29 @@ programming:
       foreground: chardonnay
 
 media:
-  foreground: vermilion
+  image:
+    foreground: kourkinova
+
+  audio:
+    foreground: alpine
+
+  video:
+    foreground: alpine
+    font-style: bold
+
+  fonts:
+    foreground: kourkinova
 
 office:
-  foreground: chardonnay
-
-archives:
-  foreground: alpine
-  font-style: underline
-
-executable:
-  foreground: alpine
+  foreground: christine
   font-style: bold
 
-unimportant:
+archives:
   foreground: christine
-  font-style: faint
+  font-style: bold
+
+executable:
+  foreground: vermilion
+
+unimportant:
+  foreground: base01
