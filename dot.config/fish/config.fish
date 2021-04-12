@@ -15,10 +15,13 @@ set -gx JAVA_HOME /usr/local/opt/openjdk
 set fish_greeting ""
 
 if test "$COLORTERM" = "truecolors"
-  set -gx LS_COLORS (vivid generate molokai)
+  set -gx LS_COLORS (vivid generate lava)
 else
-  set -gx LS_COLORS (vivid -m 8-bit generate molokai)
+  set -gx LS_COLORS (vivid -m 8-bit generate lava)
 end
 
 source ~/.iterm2_shell_integration.(basename $SHELL)
+
+fish_vi_key_bindings
+
 starship init fish | source
