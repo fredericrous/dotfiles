@@ -6,6 +6,9 @@ brew bundle
 rm -rf /Applications/p4admin.app
 rm -rf /Applications/p4v.app
 
+# Disable Startup Chime
+sudo nvram StartupMute=%01
+
 osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Lightshot Screenshot.app", hidden:false}'
 
 sudo sh -c 'echo /usr/local/bin/fish >> /etc/shells'
@@ -63,8 +66,9 @@ defaults write com.apple.AppleMultitouchTrackpad "trackpadCornerClickBehavior" -
 
 #### list from:
 ####  - https://macos-defaults.com/
+####  - https://github.com/herrbischoff/awesome-macos-command-line
 ####  - https://github.com/mathiasbynens/dotfiles/blob/main/.macos
-####  - from hhttps://github.com/phillbaker/dotfiles/blob/master/.osx
+####  - https://github.com/phillbaker/dotfiles/blob/master/.osx
 #### `defaults` can be listed with command: "defaults find <key>"
 
 defaults write com.apple.dock "orientation" -string "left"
@@ -163,6 +167,10 @@ defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
 # Follow the keyboard focus while zoomed in
 defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
 
+#Set Default Finder Location to Home Folder
+defaults write com.apple.finder NewWindowTarget -string "PfLo"
+defaults write com.apple.finder NewWindowTargetPath -string "file://$HOME"
+
 killall Dock
 
 ##### transmission #####
@@ -183,6 +191,8 @@ defaults write org.m0k.transmission WarningDonate -bool false
 defaults write org.m0k.transmission WarningLegal -bool false
 
 ##### end transmission #####
+
+cp -r ./fonts/* ~/Library/Fonts/
 
 #xattr -cr /Applications/Adobe\ Zii\ 2020\ 5.1.8.app/
 #xattr -d -r com.apple.quarantine /Library/QuickLook/Video.qlgenerator
