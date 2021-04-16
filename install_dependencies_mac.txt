@@ -1,32 +1,71 @@
+#!/bin/zsh
+
 xcode-select --install
 brew bundle
 
-/usr/local/opt/fzf/install 
+rm -rf /Applications/p4admin.app
+rm -rf /Applications/p4v.app
+
+osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Lightshot Screenshot.app", hidden:false}'
 
 sudo sh -c 'echo /usr/local/bin/fish >> /etc/shells'
 chsh -s /usr/local/bin/fish
+fish
+
 set -U fish_user_paths /usr/local/bin $fish_user_paths
+/usr/local/opt/fzf/install 
 
 curl -L https://get.oh-my.fish | fish
-omf install brew bang-bang export colored-man-pages wget elinks nmap watch
+omf install brew bang-bang export colored-man-pages
 
-curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+curl -sL https://git.io/fisher | source
+fisher install jorgebucaran/fisher
 fisher install acomagu/fish-async-prompt
 
 # `fish_config` then set lava
+set -U fish_color_normal normal
+set -U fish_color_command FF9400
+set -U fish_color_quote BF9C30
+set -U fish_color_redirection BF5B30
+set -U fish_color_end FF4C00
+set -U fish_color_error FFDD73
+set -U fish_color_param FFC000
+set -U fish_color_comment A63100
+set -U fish_color_match --background=brblue
+set -U fish_color_selection white --bold --background=brblack
+set -U fish_color_search_match bryellow --background=brblack
+set -U fish_color_history_current --bold
+set -U fish_color_operator 00a6b2
+set -U fish_color_escape 00a6b2
+set -U fish_color_cwd green
+set -U fish_color_cwd_root red
+set -U fish_color_valid_path --underline
+set -U fish_color_autosuggestion FFC473
+set -U fish_color_user brgreen
+set -U fish_color_host normal
+set -U fish_color_cancel -r
+set -U fish_pager_color_completion normal
+set -U fish_pager_color_description B3A06D yellow
+set -U fish_pager_color_prefix white --bold --underline
+set -U fish_pager_color_progress brwhite --background=cyan
+
 set -x LANG en_US.UTF-8
+
+curl -L https://iterm2.com/shell_integration/fish -o ~/.iterm2_shell_integration.fish
 
 osascript -e 'tell application "System Preferences" to quit'
 
 sudo -v
-sudo nvram SystemAudioVolume=" "
 
 defaults write com.apple.AppleMultitouchTrackpad "TrackpadThreeFingerDrag" -int "3"
 defaults write com.apple.AppleMultitouchTrackpad "enableSecondaryClick" -bool "true"
 defaults write com.apple.AppleMultitouchTrackpad "trackpadCornerClickBehavior" -int "1"
 
-#### list from https://macos-defaults.com/misc/LSQuarantine.html#set-to-true-default-value
-#### this list of defaults can be find with "defaults find <key>"
+#### list from:
+####  - https://macos-defaults.com/
+####  - https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+####  - from hhttps://github.com/phillbaker/dotfiles/blob/master/.osx
+#### `defaults` can be listed with command: "defaults find <key>"
 
 defaults write com.apple.dock "orientation" -string "left"
 defaults write com.apple.dock "tilesize" -int "44"
@@ -44,8 +83,6 @@ defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
 defaults write com.apple.LaunchServices LSQuarantine -bool false
 
 defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
-
-##### list from https://github.com/mathiasbynens/dotfiles/blob/main/.macos
 
 # Disable automatic capitalization as it’s annoying when typing code
 defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
@@ -105,6 +142,27 @@ sudo chflags nohidden /Volumes
 # Don’t display the annoying prompt when quitting iTerm
 defaults write com.googlecode.iterm2 PromptOnQuit -bool false
 
+# Trackpad: enable tap to click for this user and for the login screen
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
+defaults -currentHost write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
+
+# Trackpad: map bottom right corner to right-click
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadCornerSecondaryClick -int 2
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadRightClick -bool true
+defaults -currentHost write NSGlobalDomain com.apple.trackpad.trackpadCornerClickBehavior -int 1
+defaults -currentHost write NSGlobalDomain com.apple.trackpad.enableSecondaryClick -bool true
+
+# Trackpad: swipe between pages with only three fingers
+defaults write NSGlobalDomain AppleEnableSwipeNavigateWithScrolls -bool true
+defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 2
+
+# Use scroll gesture with the Ctrl (^) modifier key to zoom
+defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
+defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
+# Follow the keyboard focus while zoomed in
+defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
+
 killall Dock
 
 ##### transmission #####
@@ -126,5 +184,5 @@ defaults write org.m0k.transmission WarningLegal -bool false
 
 ##### end transmission #####
 
-xattr -cr /Applications/Adobe\ Zii\ 2020\ 5.1.8.app/
-
+#xattr -cr /Applications/Adobe\ Zii\ 2020\ 5.1.8.app/
+#xattr -d -r com.apple.quarantine /Library/QuickLook/Video.qlgenerator
