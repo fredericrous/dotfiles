@@ -1,14 +1,7 @@
-brew tap aws/tap
-#brew tap danielbayley/adobe
-brew tap homebrew/cask-fonts
-brew install tree htop git node xcode aws-sam-cli awscli fish fzf openjdk noti ncdu coreutils gnu-sed bat nmap dos2unix \
-git-delta prettyping https://raw.githubusercontent.com/trntv/sshed/master/sshed.rb ghostscript imagemagick ansible gh python terraform \
-starship vivid MisterTea/et/et telnet github/gh/gh jq yq lsd fd ripgrep
+xcode-select --install
+brew bundle
 
 /usr/local/opt/fzf/install 
-
-brew install --cask iterm2 pixel-picker discord twitch steam sublime-text vlc cakebrew font-Fira-Code-nerd-font \
-qlcolorcode qlstephen qlmarkdown quicklook-json qlimagesize suspicious-package quicklookase qlvideo
 
 sudo sh -c 'echo /usr/local/bin/fish >> /etc/shells'
 chsh -s /usr/local/bin/fish
@@ -22,6 +15,116 @@ fisher install acomagu/fish-async-prompt
 
 # `fish_config` then set lava
 set -x LANG en_US.UTF-8
+
+osascript -e 'tell application "System Preferences" to quit'
+
+sudo -v
+sudo nvram SystemAudioVolume=" "
+
+defaults write com.apple.AppleMultitouchTrackpad "TrackpadThreeFingerDrag" -int "3"
+defaults write com.apple.AppleMultitouchTrackpad "enableSecondaryClick" -bool "true"
+defaults write com.apple.AppleMultitouchTrackpad "trackpadCornerClickBehavior" -int "1"
+
+#### list from https://macos-defaults.com/misc/LSQuarantine.html#set-to-true-default-value
+#### this list of defaults can be find with "defaults find <key>"
+
+defaults write com.apple.dock "orientation" -string "left"
+defaults write com.apple.dock "tilesize" -int "44"
+defaults write com.apple.dock "autohide" -bool "true"
+defaults write NSGlobalDomain "AppleShowAllExtensions" -bool "true"
+defaults write com.apple.Finder "AppleShowAllFiles" -bool "true"
+defaults write com.apple.finder "FXEnableExtensionChangeWarning" -bool "false"
+defaults write NSGlobalDomain NSUseAnimatedFocusRing -bool "false"
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode -bool true
+defaults write NSGlobalDomain NSNavPanelExpandedStateForSaveMode2 -bool true
+defaults write NSGlobalDomain PMPrintingExpandedStateForPrint -bool true
+defaults write NSGlobalDomain PMPrintingExpandedStateForPrint2 -bool true
+defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false
+defaults write com.apple.print.PrintingPrefs "Quit When Finished" -bool true
+defaults write com.apple.LaunchServices LSQuarantine -bool false
+
+defaults write NSGlobalDomain NSDisableAutomaticTermination -bool true
+
+##### list from https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+
+# Disable automatic capitalization as it’s annoying when typing code
+defaults write NSGlobalDomain NSAutomaticCapitalizationEnabled -bool false
+
+# Disable smart dashes as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticDashSubstitutionEnabled -bool false
+
+# Disable automatic period substitution as it’s annoying when typing code
+defaults write NSGlobalDomain NSAutomaticPeriodSubstitutionEnabled -bool false
+
+# Disable smart quotes as they’re annoying when typing code
+defaults write NSGlobalDomain NSAutomaticQuoteSubstitutionEnabled -bool false
+
+# Disable auto-correct
+defaults write NSGlobalDomain NSAutomaticSpellingCorrectionEnabled -bool false
+
+# Finder: show status bar
+defaults write com.apple.finder ShowStatusBar -bool true
+
+# Finder: show path bar
+defaults write com.apple.finder ShowPathbar -bool true
+
+# Display full POSIX path as Finder window title
+defaults write com.apple.finder _FXShowPosixPathInTitle -bool true
+
+# Keep folders on top when sorting by name
+defaults write com.apple.finder _FXSortFoldersFirst -bool true
+
+# When performing a search, search the current folder by default
+defaults write com.apple.finder FXDefaultSearchScope -string "SCcf"
+
+# Avoid creating .DS_Store files on network or USB volumes
+defaults write com.apple.desktopservices DSDontWriteNetworkStores -bool true
+defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
+
+# Disable disk image verification
+defaults write com.apple.frameworks.diskimages skip-verify -bool true
+defaults write com.apple.frameworks.diskimages skip-verify-locked -bool true
+defaults write com.apple.frameworks.diskimages skip-verify-remote -bool true
+
+# Use list view in all Finder windows by default
+# Four-letter codes for the other view modes: `icnv`, `clmv`, `glyv`
+defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
+
+# Disable the warning before emptying the Trash
+defaults write com.apple.finder WarnOnEmptyTrash -bool false
+
+# Enable AirDrop over Ethernet and on unsupported Macs running Lion
+defaults write com.apple.NetworkBrowser BrowseAllInterfaces -bool true
+
+# Show the ~/Library folder
+chflags nohidden ~/Library && xattr -d com.apple.FinderInfo ~/Library
+
+# Show the /Volumes folder
+sudo chflags nohidden /Volumes
+
+# Don’t display the annoying prompt when quitting iTerm
+defaults write com.googlecode.iterm2 PromptOnQuit -bool false
+
+killall Dock
+
+##### transmission #####
+
+# Don’t prompt for confirmation before downloading
+defaults write org.m0k.transmission DownloadAsk -bool false
+defaults write org.m0k.transmission MagnetOpenAsk -bool false
+
+# Don’t prompt for confirmation before removing non-downloading active transfers
+defaults write org.m0k.transmission CheckRemoveDownloading -bool true
+
+# Trash original torrent files
+defaults write org.m0k.transmission DeleteOriginalTorrent -bool true
+
+# Hide the donate message
+defaults write org.m0k.transmission WarningDonate -bool false
+# Hide the legal disclaimer
+defaults write org.m0k.transmission WarningLegal -bool false
+
+##### end transmission #####
 
 xattr -cr /Applications/Adobe\ Zii\ 2020\ 5.1.8.app/
 
