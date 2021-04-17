@@ -50,7 +50,7 @@ deleted = "[ ${count} ](fg:black bg:#d8712c)"
 untracked = "[?${count} ](fg:black bg:#d8712c)"
 stashed = "[ ${count} ](fg:black bg:#d8712c)"
 ahead = "[ ${count} ](fg:purple bg:#d8712c)"
-behind = "[ ${count} ](fg:yellow bg:#d8712c)"
+behind = "[ ${count} ](fg:#fe4286 bg:#d8712c)"
 diverged = "[ ](fg:88 bg:#d8712c)[ נּ](fg:black bg:#d8712c)[ ${ahead_count} ](fg:purple bg:#d8712c)[ ${behind_count} ](fg:black bg:#d8712c)"
 
 [golang]
