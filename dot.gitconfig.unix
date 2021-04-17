@@ -1,9 +1,9 @@
 [user]
-    name = fredericrous
-    email = frederic.rousseau.fr@gmail.com
+    name = Fred R.
+    email = frederic.rousseau@storyful.com
 [alias]
     rewrite-author = !~/git-rewrite-author.sh
-    lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=local
+    tree = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=local
     st = status
     co = checkout
     ca = commit --amend
@@ -16,6 +16,7 @@
     autocrlf = true
     editor = "/usr/bin/vim"
     pager = delta
+	excludesfile = ~/.gitignore
 [credential]
     helper = cache
 [diff]
@@ -69,5 +70,5 @@
     commit-decoration-style = bold yellow box ul
     file-style = bold yellow ul
     file-decoration-style = none
-[includeIf "gitdir:/OHDevelop/**"]
-    path = ~/.gitconfig_oh
+[includeIf "gitdir:~/Developer/Perso/**"]
+    path = ~/.gitconfig_perso
