@@ -8,7 +8,7 @@
     co = checkout
     ca = commit --amend
     br = branch
-    p4 = !'C:\\Program Files\\git\\bin\\git-p4.py'
+#    p4 = !'C:\\Program Files\\git\\bin\\git-p4.py'
 [branch]
     autosetupmerge = true
 [color] 
@@ -50,8 +50,8 @@
 [http]
     sslVerify = false
     postBuffer = 157286400
-[hub]
-    host = github.wdf.sap.corp
+#[hub]
+#    host = github.enterprise.corp
 [merge]
     keepBackup = false
     tool = p4merge
@@ -66,5 +66,5 @@
     rebase = true
 [push]
    default = current
-[includeIf "gitdir:C:/OHDevelop/**"]
-    path = ~/.gitconfig_oh
+#[includeIf "gitdir:~/Developer/Company/**"]
+#    path = ~/.gitconfig_company
