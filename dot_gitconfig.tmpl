@@ -1,0 +1,5 @@
+{{ if (eq .chezmoi.os "darwin") }}
+{{- template "dot_gitconfig_unix" -}}
+{{ else }}
+{{- template "dot_gitconfig_win" -}}
+{{ end }}

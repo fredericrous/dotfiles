@@ -9,7 +9,8 @@
     ca = commit --amend
     br = branch
 [branch]
-    autosetupmerge = true
+    autosetupmerge = always
+    autosetuprebase = always
 [color] 
     ui = auto
 [core]

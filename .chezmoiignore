@@ -2,10 +2,8 @@ README.md
 fonts/
 install_*
 {{ if ne .chezmoi.os "windows" }}
-.gitconfig_win
 Documents/WindowsPowerShell/Profile.ps1
 {{ else }}
-.gitconfig_unix
 .wgetrc
 .hushlogin
 Library/Application\ Support/Code/User/settings.json
