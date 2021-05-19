@@ -1,0 +1,11 @@
+Host *
+{{- if eq .chezmoi.os "darwin" }}
+  AddKeysToAgent yes
+  UseKeychain yes
+{{- end }}
+  IdentityFile ~/.ssh/id_rsa
+
+Host github
+     HostName github.com
+     User git
+

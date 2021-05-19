@@ -35,9 +35,13 @@ format = "[](fg:black bg:#eb9606)[$symbol$context]($style)[](fg:#eb9606)"
 style = "#d8712c"
 format = "[](fg:black bg:$style)[ $symbol$branch](fg:black bg:$style)[](fg:$style)"
 
+[git_commit]
+style = "#d8712c"
+format = "\b[ ](bg:$style)[\\($hash$tag\\)](fg:black bg:$style)[](fg:$style)"
+
 [git_state]
 style = "#d8712c"
-format = "\b\b[ \\($state( $progress_current/$progress_total)\\)](fg:white bg:$style)[](fg:$style)"
+format = "\b[ ](bg:$style)[ \\($state( $progress_current/$progress_total)\\)](fg:black bg:$style)[](fg:$style)"
 
 [git_status]
 style = "#d8712c"
@@ -50,8 +54,8 @@ deleted = "[ ${count} ](fg:black bg:#d8712c)"
 untracked = "[?${count} ](fg:black bg:#d8712c)"
 stashed = "[ ${count} ](fg:black bg:#d8712c)"
 ahead = "[ ${count} ](fg:#523333 bg:#d8712c)"
-behind = "[ ${count} ](fg:#939594 bg:#d8712c)"
-diverged = "[ ](fg:88 bg:#d8712c)[ נּ](fg:black bg:#d8712c)[ ${ahead_count} ](fg:purple bg:#d8712c)[ ${behind_count} ](fg:black bg:#d8712c)"
+behind = "[ ${count} ](fg:black bg:#d8712c)"
+diverged = "[ ](fg:88 bg:#d8712c)[ נּ ](fg:black bg:#d8712c)[ ${ahead_count} ](fg:black bg:#d8712c)[ ${behind_count} ](fg:black bg:#d8712c)"
 
 [golang]
 symbol = "ﳑ "

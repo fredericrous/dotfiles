@@ -104,5 +104,12 @@
     "emmet.includeLanguages": {
       "javascript": "javascriptreact"
     },
-    "emmet.triggerExpansionOnTab": true
+    "emmet.triggerExpansionOnTab": true,
+    "workbench.editorAssociations": [
+      {
+        "viewType": "jupyter.notebook.ipynb",
+        "filenamePattern": "*.ipynb"
+      }
+    ],
+    "python.pythonPath": "/usr/local/opt/python@3.9/bin/python3.9"
 }

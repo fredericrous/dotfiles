@@ -1,0 +1,5 @@
+alias cat='bat -p'
+alias ls='lsd'
+alias top='btm'
+alias diff='delta'
+alias fd='fd -H'

@@ -1,0 +1,12 @@
+--colors=path:fg:blue
+--colors=path:style:bold
+--colors=match:fg:green
+--colors=line:fg:yellow
+
+--glob=!{.git,node_modules}
+--glob=!{package-lock.json}
+
+--context=3
+--max-columns=1024
+--smart-case
+
