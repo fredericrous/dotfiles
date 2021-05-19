@@ -26,6 +26,7 @@ brew "htop"
 brew "imagemagick"
 brew "jq"
 brew "lsd"
+brew "mas"
 brew "mkcert"
 brew "mysql-client"
 brew "neovim"
@@ -65,7 +66,12 @@ cask "qlstephen"
 cask "qlvideo"
 cask "p4v"
 cask "rectangle"
-cask "transmission"
+cask "the-unarchiver"
 cask "twitch"
 cask "vlc"
 cask "wireshark"
+mas "Lightshot Screenshot", id: 526298438
+mas "Amphetamine", id: 937984704
+mas "Free Ruler", id: 1483172210
+mas "NordVPN IKE - Unlimited VPN", id: 1116599239
+

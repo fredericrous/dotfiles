@@ -2,7 +2,7 @@
     name = Zougi
     email = ***REMOVED***
 [alias]
-    rewrite-author = !~/git-rewrite-author.sh
+    rewrite-author = !~/.git-rewrite-author.sh
     lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=local
     st = status
     co = checkout
@@ -51,7 +51,7 @@
     sslVerify = false
     postBuffer = 157286400
 #[hub]
-#    host = github.enterprise.corp
+#    host = enterprise.corp
 [merge]
     keepBackup = false
     tool = p4merge
@@ -64,6 +64,8 @@
     keepBackup = false
 [pull]
     rebase = true
+[rebase]
+    autoStash = true
 [push]
    default = current
 #[includeIf "gitdir:~/Developer/Company/**"]

@@ -4,13 +4,16 @@ if test (uname -s) = "Darwin"
   set -gx PATH /Applications/p4merge.app/Contents/MacOS $PATH
   set -gx PATH /Users/fredericrous/Library/AndroidSDK/bin $PATH
   set -gx PATH "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" $PATH
+
+  set -g fish_user_paths "/usr/local/opt/openjdk/bin" $fish_user_paths
+  set -g fish_user_paths "/usr/local/opt/mysql-client/bin" $fish_user_paths
+
+  set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
+  set -gx JAVA_HOME /usr/local/opt/openjdk
+  set -gx EDITOR /usr/bin/vim
+  set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
+  set -gx RIPGREP_CONFIG_PATH "$HOME/.ripgreprc"
 end
-
-set -g fish_user_paths "/usr/local/opt/openjdk/bin" $fish_user_paths
-set -g fish_user_paths "/usr/local/opt/mysql-client/bin" $fish_user_paths
-
-set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
-set -gx JAVA_HOME /usr/local/opt/openjdk
 
 set fish_greeting ""
 

@@ -2,7 +2,7 @@
     name = Fred R.
     email = frederic.rousseau@storyful.com
 [alias]
-    rewrite-author = !~/git-rewrite-author.sh
+    rewrite-author = !~/.git-rewrite-author.sh
     tree = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=local
     st = status
     co = checkout
@@ -13,7 +13,8 @@
 [color] 
     ui = auto
 [core]
-    autocrlf = true
+    eol = lf
+    autocrlf = input
     editor = "/usr/bin/vim"
     pager = delta
 	excludesfile = ~/.gitignore
@@ -47,6 +48,8 @@
     keepBackup = false
 [pull]
     rebase = true
+[rebase]
+    autoStash = true
 [push]
    default = current
 [color "diff-highlight"]
