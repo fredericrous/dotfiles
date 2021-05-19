@@ -10,7 +10,8 @@
     br = branch
 #    p4 = !'C:\\Program Files\\git\\bin\\git-p4.py'
 [branch]
-    autosetupmerge = true
+    autosetupmerge = always
+    autosetuprebase = always
 [color] 
     ui = auto 
 [color "branch"] 
