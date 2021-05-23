@@ -17,14 +17,15 @@ style = "#f9a600"
 format = "[](fg:black bg:#f9a600)[祥$duration](bg:$style fg:black)[](fg:$style)"
 
 [custom.git_status_return]
-format = "\b\b[](fg:#c05303)"
+format = "\b\b[](fg:#d8712c)"
 when = "git st 2>/dev/null; test $status -ne 0"
 
 [directory]
 style = "#c05303"
 truncate_to_repo = false
 fish_style_pwd_dir_length = 1
-format = "[](fg:black bg:#c05303)[$path[$read_only]($read_only_style)](bg:$style fg:black)[](fg:$style)"
+format = "[](fg:black bg:#c05303)[$path[$read_only](bg:$style fg:black)](bg:$style fg:black)[](fg:$style)"
+read_only = " "
 
 [docker_context]
 style = "fg:black bg:#eb9606"
@@ -123,7 +124,7 @@ style = "fg:black bg:#eb9606"
 format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
 
 [shlvl]
-symbol = " "
+symbol = " "
 style = "fg:black bg:#ad4007"
 format = "[](fg:black bg:#ad4007)[$symbol$shlvl]($style)[](fg:#ad4007)"
 disabled = false
@@ -135,3 +136,8 @@ format = "[](fg:black bg:#eb9606)[$symbol$workspace]($style)[](fg:#eb9606)
 [vagrant]
 style = "fg:black bg:#eb9606"
 format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
+
+[username]
+style_user = "#0370C0"
+style_root = "#C00311"
+format = "[](fg:black bg:$style)[$user](fg:black bg:$style)[](fg:$style)"
