@@ -17,7 +17,7 @@ style = "#f9a600"
 format = "[](fg:black bg:#f9a600)[祥$duration](bg:$style fg:black)[](fg:$style)"
 
 [custom.git_status_return]
-format = "\b\b[](fg:#d8712c)"
+format = "\b\b[](fg:#c05303)"
 when = "git st 2>/dev/null; test $status -ne 0"
 
 [directory]
