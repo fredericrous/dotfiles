@@ -8,9 +8,12 @@
     co = checkout
     ca = commit --amend
     br = branch
+	credit = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
+    go = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
 [branch]
     autosetupmerge = always
     autosetuprebase = always
+    sort = -committerdate
 [color] 
     ui = auto
 [core]
@@ -18,11 +21,20 @@
     autocrlf = input
     editor = "/usr/bin/vim"
     pager = delta
-	excludesfile = ~/.gitignore
+    excludesfile = ~/.gitignore
+    whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+    # Make `git rebase` safer on macOS.
+    # More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
+    trustctime = false
+    # Prevent showing files whose names contain non-ASCII symbols as unversioned.
+    # http://michael-kuehnel.de/git/2014/11/21/git-mac-osx-and-german-umlaute.html
+    precomposeunicode = false
 [credential]
     helper = cache
 [diff]
     tool = p4merge
+[diff "bin"]
+    textconv = hexdump -v -C
 [difftool]
     prompt = false
 [difftool "p4merge"]
@@ -54,17 +66,17 @@
 [push]
    default = current
 [color "diff-highlight"]
-	oldNormal = red bold
-	oldHighlight = red bold 52
-	newNormal = green bold
-	newHighlight = green bold 22
+    oldNormal = red bold
+    oldHighlight = red bold 52
+    newNormal = green bold
+    newHighlight = green bold 22
 [color "diff"]
-	meta = 11
-	frag = magenta bold
-	commit = yellow bold
-	old = red bold
-	new = green bold
-	whitespace = red reverse
+    meta = 11
+    frag = magenta bold
+    commit = yellow bold
+    old = red bold
+    new = green bold
+    whitespace = red reverse
 [interactive]
     diffFilter = delta --color-only
 [delta]
@@ -74,5 +86,7 @@
     commit-decoration-style = bold yellow box ul
     file-style = bold yellow ul
     file-decoration-style = none
+[init]
+    defaultBranch = main
 [includeIf "gitdir:~/Developer/Perso/**"]
     path = ~/.gitconfig_perso
