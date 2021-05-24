@@ -12,6 +12,7 @@
 [branch]
     autosetupmerge = always
     autosetuprebase = always
+    sort = -committerdate
 [color] 
     ui = auto 
 [color "branch"] 
@@ -33,6 +34,8 @@
     autocrlf = input
     safecrlf = false
     editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
+    excludesfile = ~/.gitignore
+    whitespace = space-before-tab,-indent-with-non-tab,trailing-space
 [credential]
     helper = cache
 [diff]
@@ -68,6 +71,8 @@
 [rebase]
     autoStash = true
 [push]
-   default = current
+    default = current
+[init]
+    defaultBranch = main
 #[includeIf "gitdir:~/Developer/Company/**"]
 #    path = ~/.gitconfig_company
