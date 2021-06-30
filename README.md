@@ -9,6 +9,7 @@ Login to bitwarden. This is used for the files:
 - `id_rsa`
 
 ```sh
+brew install bitwarden-cli
 bw config server <url>
 bw login
 export BW_SESSION="<session id>"
