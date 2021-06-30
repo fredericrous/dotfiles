@@ -14,9 +14,8 @@ end
 
 set -gx EDITOR /usr/bin/vim
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
+set -x LESS "--ignore-case --LONG-PROMPT --RAW-CONTROL-CHARS --tabs=4 --window=-4"
 set -gx RIPGREP_CONFIG_PATH "$HOME/.ripgreprc"
-set fish_greeting ""
-fish_vi_key_bindings
 
 if test "$COLORTERM" = "truecolors"
   set -gx LS_COLORS (vivid generate lava)
@@ -24,9 +23,18 @@ else
   set -gx LS_COLORS (vivid -m 8-bit generate lava)
 end
 
-source ~/.iterm2_shell_integration.(basename $SHELL)
-
 set -gx LANG en_US.UTF-8
 set -gx LC_ALL en_US.UTF-8
 
 starship init fish | source
+
+###################################
+# Interactive mode configurations #
+###################################
+status is-interactive || exit
+
+source ~/.iterm2_shell_integration.(basename $SHELL)
+fish_vi_key_bindings
+fzf_configure_bindings --directory=\cf --git_log=\cl --git_status=\cs
+set fish_greeting ""
+

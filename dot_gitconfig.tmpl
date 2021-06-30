@@ -1,5 +1,67 @@
+[user]
+    name = Fred R.
+    email = {{ .email }}
+    signingkey = 86E887F9C4DA446B2AB8DC91210CECB21E9F1DAC
+[branch]
+    autosetupmerge = always
+    autosetuprebase = always
+    sort = -committerdate
+[core]
+    autocrlf = input
 {{ if (eq .chezmoi.os "darwin") }}
-{{- template "dot_gitconfig_unix" -}}
+    editor = "/usr/bin/vim"
 {{ else }}
-{{- template "dot_gitconfig_win" -}}
+    safecrlf = false
+    editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
 {{ end }}
+    eol = lf
+    excludesfile = ~/.config/git/gitignore
+    pager = delta
+    # Make `git rebase` safer on macOS.
+    # More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
+    trustctime = false
+    whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+[credential]
+    helper = cache
+[diff]
+    tool = p4merge
+[diff "bin"]
+    textconv = hexdump -v -C
+[difftool]
+    prompt = false
+[difftool "p4merge"]
+    cmd = p4merge "$LOCAL" "$REMOTE"
+    keepTemporaries = false
+    trustExitCode = false
+    keepBackup = false
+[filter "lfs"]
+    required = true
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    process = git-lfs filter-process
+[http]
+    sslVerify = false
+    postBuffer = 157286400
+[init]
+    defaultBranch = main
+    templatedir = ~/.config/git/template
+[merge]
+    keepBackup = false
+    tool = p4merge
+[mergetool]
+    prompt = false
+[mergetool "p4merge"]
+    cmd = p4merge "$BASE" "$LOCAL" "$REMOTE" "$MERGED"
+    keepTemporaries = false
+    trustExitCode = false
+    keepBackup = false
+[pull]
+    rebase = true
+    ff = only
+[rebase]
+    autoStash = true
+[include]
+    path = .config/git/alias.toml
+    path = .config/git/style.toml
+[includeIf "gitdir:~/Developer/Perso/**"]
+    path = ~/.config/git/gitconfig_perso.toml

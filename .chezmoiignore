@@ -1,6 +1,7 @@
 README.md
 fonts/
 install_*
+.gitattributes
 {{ if ne .chezmoi.os "windows" }}
 Documents/WindowsPowerShell/Profile.ps1
 {{ else }}
