@@ -1,12 +1,14 @@
 set nocompatible
 
 syntax on		" syntax highlight
+
+" search
 set hlsearch            " highlight search terms
 set incsearch           " show search matches as you type
 set showmatch		" Cursor shows matching ) and }
 set showmode		" Show current mode
 
-set shell=zsh
+set shell=fish
 
 filetype on           " Enable filetype detection
 filetype indent on    " Enable filetype-specific indenting
@@ -20,10 +22,45 @@ set ignorecase		" ignore case when searching
 set smartcase		" ignore case if search pattern is all lowercase,case-sensitive otherwise
 set smarttab		" insert tabs on the start of a line according to context
 
+set tabstop     =2
+set softtabstop =2
+set shiftwidth  =2
+set expandtab      " space instead of tabs
+
+set encoding=utf-8 " default should be utf-8 but on some old vim it could be latin1
+
+set ruler  " line and character position of the cursor
+
+highlight iLineNr  guifg=#505050   guibg=Black ctermfg=yellow
+highlight Normal   guifg=White     guibg=Black ctermfg=white
+
+" delimiter at 120 characters
+highlight ColorColumn ctermbg=grey guibg=Magenta ctermfg=black guifg=Black
+call matchadd('ColorColumn', '\%81v', 120)
+
 " disable sound on errors
 set noerrorbells
 set novisualbell
 set t_vb=
 set tm=500
+set belloff=all
+
+" Enable use of the mouse for all modes
+if has('mouse')
+  set mouse=a
+endif
+
+let g:netrw_liststyle = 3 " Configure :Vexplore to navigate as a tree
 
 set omnifunc=syntaxcomplete#Complete
+
+" Toggle cursor between normal and insert mode
+let &t_SI = "\e[6 q"
+let &t_EI = "\e[2 q"
+
+"" reset the cursor on start (for older versions of vim)
+"augroup myCmds
+"au!
+"autocmd VimEnter * silent !echo -ne "\e[2 q"
+"augroup END
+

@@ -3,3 +3,4 @@ $if mode == vi
     set keymap vi
     set keymap vi-insert
 #$endif
+

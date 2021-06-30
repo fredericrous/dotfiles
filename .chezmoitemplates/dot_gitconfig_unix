@@ -1,6 +1,7 @@
 [user]
     name = Fred R.
     email = frederic.rousseau@storyful.com
+    signingkey = 86E887F9C4DA446B2AB8DC91210CECB21E9F1DAC
 [alias]
     rewrite-author = !~/.git-rewrite-author.sh
     tree = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=local
@@ -88,5 +89,6 @@
     file-decoration-style = none
 [init]
     defaultBranch = main
+    templatedir = ~/.config/git/templates
 [includeIf "gitdir:~/Developer/Perso/**"]
     path = ~/.gitconfig_perso
