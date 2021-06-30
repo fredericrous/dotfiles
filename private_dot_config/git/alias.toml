@@ -1,0 +1,19 @@
+[alias]
+        rewrite-author = !~/.config/git/git-rewrite-author.sh
+        tree = log --color --graph --pretty=tree --abbrev-commit --date=local
+        st = status
+        co = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
+        ca = commit --amend
+        br = branch
+        fixup = "!f() { TARGET=$(git rev-parse \"$1\"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
+        author = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
+        coauthor = "!f() { \
+                OLD_MSG=$(git log --format=%B -1) \
+                CO_AUTHOR=$(git log --format='%aN <%ae>' | sort -u | rg $1 --context=0); \
+                [ ! -z \"$CO_AUTHOR\" ] && git commit --amend -m\"$OLD_MSG\" -m\"Co-authored-by: $CO_AUTHOR\"; \
+                }; f"
+        subpull = !git submodule sync && git submodule update --init --recursive --remote
+        ref = reflog --pretty=reflog
+[pretty]
+        reflog = %C(auto)%h %<|(20)%gd %C(blue)%cr%C(reset) %gs (%s)
+        tree = %Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset
