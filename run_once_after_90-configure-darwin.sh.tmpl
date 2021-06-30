@@ -1,6 +1,6 @@
-{{ if eq .chezmoi.os "darwin" }}
+{{ if (eq .chezmoi.os "darwin") -}}
 #!/bin/sh
 
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
 brew bundle --file=~/.Brewfile || true
-{{ end }}
+{{ end -}}

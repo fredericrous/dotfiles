@@ -1,5 +1,7 @@
-#add_newline = false
+# https://starship.rs/config/
+# fredericrous
 
+#add_newline = false
 #[line_break]
 #disabled = true
 
@@ -15,10 +17,6 @@ error_symbol = "[✗](#ff4b00)"
 [cmd_duration]
 style = "#f9a600"
 format = "[](fg:black bg:#f9a600)[祥$duration](bg:$style fg:black)[](fg:$style)"
-
-[custom.git_status_return]
-format = "\b\b[](fg:#c05303)"
-when = "git st 2>/dev/null; test $status -eq 128"
 
 [directory]
 style = "#c05303"
@@ -46,7 +44,7 @@ format = "\b[ ](bg:$style)[ \\($state( $progress_current/$progress_total)\\)](fg
 
 [git_status]
 style = "#d8712c"
-format = "\b[ ](bg:$style)($conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind\b)[](fg:$style)"
+format = "(\b[ ](bg:$style fg:black)$conflicted$staged$modified$renamed$deleted$untracked$stashed$ahead_behind[](fg:$style))"
 conflicted = "[ ](bold fg:88 bg:#d8712c)[  ${count} ](fg:black bg:#d8712c)"
 staged = "[ $count ](fg:black bg:#d8712c)"
 modified = "[ ${count} ](fg:black bg:#d8712c)"

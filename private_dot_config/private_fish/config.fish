@@ -10,12 +10,13 @@ if test (uname -s) = "Darwin"
 
   set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
   set -gx JAVA_HOME /usr/local/opt/openjdk
-  set -gx EDITOR /usr/bin/vim
-  set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
-  set -gx RIPGREP_CONFIG_PATH "$HOME/.ripgreprc"
 end
 
+set -gx EDITOR /usr/bin/vim
+set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
+set -gx RIPGREP_CONFIG_PATH "$HOME/.ripgreprc"
 set fish_greeting ""
+fish_vi_key_bindings
 
 if test "$COLORTERM" = "truecolors"
   set -gx LS_COLORS (vivid generate lava)
@@ -25,6 +26,7 @@ end
 
 source ~/.iterm2_shell_integration.(basename $SHELL)
 
-fish_vi_key_bindings
+set -gx LANG en_US.UTF-8
+set -gx LC_ALL en_US.UTF-8
 
 starship init fish | source
