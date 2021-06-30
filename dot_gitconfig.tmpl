@@ -21,6 +21,8 @@
     # More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
     trustctime = false
     whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+[commit]
+    gpgsign = true
 [credential]
     helper = cache
 [diff]
@@ -63,5 +65,7 @@
 [include]
     path = .config/git/alias.toml
     path = .config/git/style.toml
+[includeIf "gitdir:~/.local/share/chezmoi/**"]
+    path = ~/.config/git/gitconfig_perso.toml
 [includeIf "gitdir:~/Developer/Perso/**"]
     path = ~/.config/git/gitconfig_perso.toml
