@@ -2,6 +2,17 @@
 
 personal environment files
 
+## Requirement
+
+Login to bitwarden. This is used for the files:
+
+- `id_rsa`
+
+```sh
+bw login
+export BW_SESSION="<session id>"
+```
+
 ## Usage
 
 Clone the repo with this [chezmoi](https://www.chezmoi.io/) command line:
