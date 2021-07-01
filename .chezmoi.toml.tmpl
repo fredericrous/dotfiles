@@ -1,5 +1,18 @@
+{{ $name := promptString "name" }}
 {{ $email := promptString "email" }}
+
 [data]
 	email = "{{ $email }}"
+	name = "{{ $name }}"
+
 [diff]
     pager = "delta"
+
+encryption = "gpg"
+[gpg]
+    recipient = "86E887F9C4DA446B2AB8DC91210CECB21E9F1DAC"
+
+[merge]
+    command = "nvim"
+    args = "-d"
+
