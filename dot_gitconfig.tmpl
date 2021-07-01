@@ -1,71 +1,72 @@
 [user]
-    name = Fred R.
-    email = {{ .email }}
-    signingkey = 86E887F9C4DA446B2AB8DC91210CECB21E9F1DAC
+	name = Fred R.
+	email = {{ .email }}
+	signingkey = B6EEF2F6A5ABF833927091F70355FC4371714951
 [branch]
-    autosetupmerge = always
-    autosetuprebase = always
-    sort = -committerdate
+	autosetupmerge = always
+	autosetuprebase = always
+	sort = -committerdate
 [core]
-    autocrlf = input
+	autocrlf = input
 {{ if (eq .chezmoi.os "darwin") }}
-    editor = "/usr/bin/vim"
+	editor = "/usr/bin/vim"
 {{ else }}
-    safecrlf = false
-    editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
+	safecrlf = false
+	editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
 {{ end }}
-    eol = lf
-    excludesfile = ~/.config/git/gitignore
-    pager = delta
-    # Make `git rebase` safer on macOS.
-    # More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
-    trustctime = false
-    whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+	eol = lf
+	excludesfile = ~/.config/git/gitignore
+	pager = delta
+	# Make `git rebase` safer on macOS.
+	# More info: <http://www.git-tower.com/blog/make-git-rebase-safe-on-osx/>
+	trustctime = false
+	whitespace = space-before-tab,-indent-with-non-tab,trailing-space
+	attributesfile = ~/.config/git/attributes
 [commit]
-    gpgsign = true
+	gpgsign = true
 [credential]
-    helper = cache
+	helper = cache
 [diff]
-    tool = p4merge
+	tool = p4merge
 [diff "bin"]
-    textconv = hexdump -v -C
+	textconv = hexdump -v -C
 [difftool]
-    prompt = false
+	prompt = false
 [difftool "p4merge"]
-    cmd = p4merge "$LOCAL" "$REMOTE"
-    keepTemporaries = false
-    trustExitCode = false
-    keepBackup = false
+	cmd = p4merge "$LOCAL" "$REMOTE"
+	keepTemporaries = false
+	trustExitCode = false
+	keepBackup = false
 [filter "lfs"]
-    required = true
-    clean = git-lfs clean -- %f
-    smudge = git-lfs smudge -- %f
-    process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
 [http]
-    sslVerify = false
-    postBuffer = 157286400
+	sslVerify = false
+	postBuffer = 157286400
 [init]
-    defaultBranch = main
-    templatedir = ~/.config/git/template
+	defaultBranch = main
+	templatedir = ~/.config/git/template
 [merge]
-    keepBackup = false
-    tool = p4merge
+	keepBackup = false
+	tool = p4merge
 [mergetool]
-    prompt = false
+	prompt = false
 [mergetool "p4merge"]
-    cmd = p4merge "$BASE" "$LOCAL" "$REMOTE" "$MERGED"
-    keepTemporaries = false
-    trustExitCode = false
-    keepBackup = false
+	cmd = p4merge "$BASE" "$LOCAL" "$REMOTE" "$MERGED"
+	keepTemporaries = false
+	trustExitCode = false
+	keepBackup = false
 [pull]
-    rebase = true
-    ff = only
+	rebase = true
+	ff = only
 [rebase]
-    autoStash = true
+	autoStash = true
 [include]
-    path = .config/git/alias.toml
-    path = .config/git/style.toml
+	path = .config/git/alias.toml
+	path = .config/git/style.toml
 [includeIf "gitdir:~/.local/share/chezmoi/**"]
-    path = ~/.config/git/gitconfig_perso.toml
+	path = ~/.config/git/gitconfig_perso.toml
 [includeIf "gitdir:~/Developer/Perso/**"]
-    path = ~/.config/git/gitconfig_perso.toml
+	path = ~/.config/git/gitconfig_perso.toml

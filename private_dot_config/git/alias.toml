@@ -1,19 +1,43 @@
 [alias]
-        rewrite-author = !~/.config/git/git-rewrite-author.sh
-        tree = log --color --graph --pretty=tree --abbrev-commit --date=local
-        st = status
-        co = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
-        ca = commit --amend
+        alias = "!f() { rg '# ' ~/.config/git/alias.toml --context=0 --no-line-number | sed -e 's/        #//' | grep -v 'alias ='; }; f"
+        # Shortcuts
+        # 
+        # br      Branch. use -r to list remote
+        # ca      Amend commit
+        # co      Checkout $branch. Create the branch if it doesn't exist
+        # ref     Reflog but prettier
+        # st      Status
+        # tree    Log graph without commit messages
         br = branch
-        fixup = "!f() { TARGET=$(git rev-parse \"$1\"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
+        ca = commit --amend
+        co = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
+        ref = reflog --pretty=reflog
+        st = status
+        tree = log --color --graph --pretty=tree --abbrev-commit --date=local
+
+        # 
+        # Commands
+        # 
+        # author           Replace last commit author with $name, $email
         author = "!f() { git commit --amend --author \"$1 <$2>\" -C HEAD; }; f"
+        # coauthor         Search author $name in previous commits and append the
+        #                  trailer Co-authored-by to the last commit
         coauthor = "!f() { \
                 OLD_MSG=$(git log --format=%B -1) \
                 CO_AUTHOR=$(git log --format='%aN <%ae>' | sort -u | rg $1 --context=0); \
                 [ ! -z \"$CO_AUTHOR\" ] && git commit --amend -m\"$OLD_MSG\" -m\"Co-authored-by: $CO_AUTHOR\"; \
                 }; f"
+        # fixup            Commit Staged files to a different commit $alias_or_id
+        fixup = "!f() { TARGET=$(git rev-parse \"$1\"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
+        # replace-history  Look through git history to replace $old_text by $new_text
+        replace-history = git filter-repo --replace-text <(echo "$1==>${2:***REMOVED***}")
+        # rewrite-author   Search git history and replace $old_email by $name $new_email
+        rewrite-author = git filter-repo --mailmap <(echo "$3 <$1> <$2>")
+        # rm-history       Erase a path from git history
+        rm-history = git-filter-repo --path $1 --invert-paths
+        # subpull          Sync & update Submodules
         subpull = !git submodule sync && git submodule update --init --recursive --remote
-        ref = reflog --pretty=reflog
 [pretty]
         reflog = %C(auto)%h %<|(20)%gd %C(blue)%cr%C(reset) %gs (%s)
         tree = %Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset
+
