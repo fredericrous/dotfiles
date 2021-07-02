@@ -30,11 +30,16 @@
         # fixup            Commit Staged files to a different commit $alias_or_id
         fixup = "!f() { TARGET=$(git rev-parse \"$1\"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
         # replace-history  Look through git history to replace $old_text by $new_text
-        replace-history = git filter-repo --replace-text <(echo "$1==>${2:***REMOVED***}")
+        replace-history = "!f() { git filter-repo --replace-text <(echo "$1==>${2:***REMOVED***}"); }; f"
+        # resign           Sign previous $commit from $email.
+        #                  master.. signs the whole branch
+        resign = "!_() { : git checkout ; [ \"$#\" -eq 0 ] && echo 'Usage: resign <rev-list>' && exit 2; \
+                   git filter-branch --commit-filter ' \
+                   if [ \"$GIT_COMMITTER_EMAIL\" = \"$2\" ]; then git commit-tree -S \"$@\"; else git commit-tree \"$@\"; fi' $1; }; _"
         # rewrite-author   Search git history and replace $old_email by $name $new_email
-        rewrite-author = git filter-repo --mailmap <(echo "$3 <$1> <$2>")
-        # rm-history       Erase a path from git history
-        rm-history = git-filter-repo --path $1 --invert-paths
+        rewrite-author = "!f() { filter-repo --mailmap <(echo "$3 <$1> <$2>"); }; f"
+        # rm-history       Erase a $path from git history
+        rm-history = "!f() { git filter-repo --path \"$1\" --invert-paths; }; f"
         # subpull          Sync & update Submodules
         subpull = !git submodule sync && git submodule update --init --recursive --remote
 [pretty]
