@@ -29,3 +29,8 @@ Apply dotfiles on the machine with
 chezmoi apply -v
 ```
 
+This command will apply the new changes from the repository and if the file on
+the machine changed, it will ask if you want to overwrite it or skip it.
+You can then merge the files with the command `chezmoi merge <file>`
+and run the `apply` command again.
+
