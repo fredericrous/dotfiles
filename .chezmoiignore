@@ -1,11 +1,12 @@
 README.md
-fonts/
 install_*
 .gitattributes
 {{ if ne .chezmoi.os "windows" }}
+AppData/
 Documents/WindowsPowerShell/Profile.ps1
 {{ else }}
+.curlrc
 .wgetrc
 .hushlogin
-Library/Application\ Support/Code/User/settings.json
+Library/Application\ Support/
 {{ end }}
