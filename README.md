@@ -2,29 +2,6 @@
 
 personal environment files
 
-## Requirement
-
-### Files Located in a Pass Vault
-
-Login to bitwarden. This is used for:
-
-- `private_dot_ssh/private_id_rsa`
-
-```sh
-brew install bitwarden-cli
-bw config server <url>
-bw login
-export BW_SESSION="<session id>"
-```
-
-### Encrypted Files
-
-To decrypt, import the key with
-
-```sh
-gpg --import key
-```
-
 ## Usage
 
 Clone the repo with this [chezmoi](https://www.chezmoi.io/) command line:
@@ -38,6 +15,11 @@ Apply dotfiles on the machine with
 ```sh
 chezmoi apply -v
 ```
+
+During the execution of `chezmoi apply`, you'll get prompted for passwords.
+Without the passwords you should just remove the files that are
+prefixed by `encrypted_` and `private_`.
+Otherwise, have a look at section **Data Protection**.
 
 ## Updating dotfiles
 
@@ -67,11 +49,25 @@ chezmoi apply
 It will asks for every file that has a diff if it should override it.
 The command `chezmoi merge <file>` helps resolving conflicts before running `apply` again.
 
-## Troubleshout
+## Data Protection
 
-During the execution of `chezmoi apply`, you'll get prompted for 
-a password to fetch data from Bitwarden and one to retrieve data 
-encrypted with gpg.
-Without the passwords you should just remove the files that are
-prefixed by `encrypted_` and `private_`
+### Files Located in a Pass Vault
 
+Login to bitwarden. This is used for:
+
+- `private_dot_ssh/private_id_rsa`
+
+```sh
+brew install bitwarden-cli
+bw config server <url>
+bw login
+export BW_SESSION="<session id>"
+```
+
+### Encrypted Files
+
+To decrypt, import the key with
+
+```sh
+gpg --import key
+```
