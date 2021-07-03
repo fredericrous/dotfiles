@@ -4,15 +4,25 @@ personal environment files
 
 ## Requirement
 
-Login to bitwarden. This is used for the files:
+### Files Located in a Pass Vault
 
-- `id_rsa`
+Login to bitwarden. This is used for:
+
+- `private_dot_ssh/private_id_rsa`
 
 ```sh
 brew install bitwarden-cli
 bw config server <url>
 bw login
 export BW_SESSION="<session id>"
+```
+
+### Encrypted Files
+
+To decrypt, import the key with
+
+```sh
+gpg --import key
 ```
 
 ## Usage
@@ -33,4 +43,12 @@ This command will apply the new changes from the repository and if the file on
 the machine changed, it will ask if you want to overwrite it or skip it.
 You can then merge the files with the command `chezmoi merge <file>`
 and run the `apply` command again.
+
+## Troubleshout
+
+During the execution of `chezmoi apply`, you'll get prompted for 
+a password to fetch data from Bitwarden and one to retrieve data 
+encrypted with gpg.
+Without the passwords you should just remove the files that are
+prefixed by `encrypted_` and `private_`
 
