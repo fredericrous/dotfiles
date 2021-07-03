@@ -1,9 +1,15 @@
 #!/bin/bash
-# fixup            Commit Staged files to a different commit $alias_or_id
+# fixup            Commit Staged files to a different commit $sha_or_alias
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -eq 0 ]; then
+    printf "Usage:\n    git $SCRIPT_NAME \$sha\n";
+    exit 1;
+fi
 
 SHA=$(git rev-parse "$1")
 git commit --fixup=$SHA ${@:2}
-if [ $? -ne 0 ];then
+if [ $? -ne 0 ]; then
     EDITOR=true
     git rebase -i --autostash --autosquash $SHA^
 fi

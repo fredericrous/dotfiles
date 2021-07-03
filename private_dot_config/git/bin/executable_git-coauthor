@@ -3,7 +3,7 @@
 #                  trailer Co-authored-by to the last commit
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 1 ]; then
     printf "Usage:\n    git $SCRIPT_NAME \$name\n";
     exit 1;
 fi
