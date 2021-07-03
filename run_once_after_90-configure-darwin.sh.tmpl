@@ -9,5 +9,12 @@ else
     echo "Brew already installed. Skipping.."
 fi
 
+if ! fish -c "fisher -v"  &> /dev/null
+then
+    curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher
+else
+    echo "Fisher already installed. Skipping.."
+fi
+
 fish -c "fisher update"
 {{ end -}}
