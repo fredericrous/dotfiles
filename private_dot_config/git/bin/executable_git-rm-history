@@ -1,0 +1,10 @@
+#!/bin/sh
+# rm-history       Erase a $path from git history
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -eq 0 ]; then
+    printf "Usage:\n    git $SCRIPT_NAME \$path [...args]\n";
+    exit 1;
+fi
+
+git filter-repo --path "$1" --invert-paths ${@:2}

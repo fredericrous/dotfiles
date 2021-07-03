@@ -1,0 +1,9 @@
+#!/bin/bash
+# replace-history  Look through git history to replace $old_text by $new_text
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -eq 0 ]; then
+    printf "Usage:\n    git $SCRIPT_NAME \$old_text [\$new_text:REMOVED]\n";
+    exit 1;
+fi
+git filter-repo --force --replace-text <(echo "$1==>${2:REMOVED}")

@@ -1,0 +1,10 @@
+#!/bin/sh
+# author-prev      Replace last commit author with $name, $email
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -ne 2 ]; then
+    echo -e "Usage:\n    git $SCRIPT_NAME \$name \$email";
+    exit 1;
+fi
+
+git commit --amend --author \"$1 <$2>\" -C HEAD

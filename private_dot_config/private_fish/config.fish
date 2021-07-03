@@ -12,6 +12,7 @@ if test (uname -s) = "Darwin"
   set -gx JAVA_HOME /usr/local/opt/openjdk
 end
 
+set -gx PATH ~/.config/git/bin $PATH
 set -gx EDITOR /usr/bin/vim
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 set -x LESS "--ignore-case --LONG-PROMPT --RAW-CONTROL-CHARS --tabs=4 --window=-4"
