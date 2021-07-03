@@ -1,15 +1,14 @@
 if test (uname -s) = "Darwin"
+  set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
+  set -gx JAVA_HOME /usr/local/opt/openjdk
   set -gx PATH /usr/local/opt/coreutils/libexec/gnubin $PATH
   set -gx PATH /usr/local/opt/gnu-sed/libexec/gnubin $PATH
   set -gx PATH /Applications/p4merge.app/Contents/MacOS $PATH
-  set -gx PATH /Users/fredericrous/Library/AndroidSDK/bin $PATH
+  set -gx PATH "$ANDROID_HOME/bin" $PATH
   set -gx PATH "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" $PATH
 
   set -g fish_user_paths "/usr/local/opt/openjdk/bin" $fish_user_paths
   set -g fish_user_paths "/usr/local/opt/mysql-client/bin" $fish_user_paths
-
-  set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
-  set -gx JAVA_HOME /usr/local/opt/openjdk
 end
 
 set -gx PATH ~/.config/git/bin $PATH
@@ -36,6 +35,6 @@ starship init fish | source
 set -gx GPG_TTY (tty)
 source ~/.iterm2_shell_integration.(basename $SHELL)
 fish_vi_key_bindings
-fzf_configure_bindings --directory=\cf --git_log=\cl --git_status=\cs
+fzf_configure_bindings --directory=\cf --git_log=\cg --git_status=\cs
 set fish_greeting ""
 
