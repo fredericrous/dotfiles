@@ -35,6 +35,6 @@ starship init fish | source
 set -gx GPG_TTY (tty)
 source ~/.iterm2_shell_integration.(basename $SHELL)
 fish_vi_key_bindings
-fzf_configure_bindings --directory=\cf --git_log=\cg --git_status=\cs
+fzf_configure_bindings --directory=\cf --git_log=\cl --git_status=\cs
 set fish_greeting ""
 
