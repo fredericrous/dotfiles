@@ -1,0 +1,8 @@
+#!/bin/sh
+rg '# ' ~/.config/git/alias.toml --context=0 --no-line-number \
+     | sed -e 's/        #//'
+printf " absorb           Better fixup\n"
+rg '# ' --sort-files ~/.config/git/bin/git-* --no-filename --context=0 --no-line-number \
+     --glob=!git-alias| sed -e 's/#//' | grep -v 'rg '
+printf "\n More alias: git extras\n"
+

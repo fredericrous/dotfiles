@@ -1,0 +1,9 @@
+#!/bin/bash
+# fixup            Commit Staged files to a different commit $alias_or_id
+
+SHA=$(git rev-parse "$1")
+git commit --fixup=$SHA ${@:2}
+if [ $? -ne 0 ];then
+    EDITOR=true
+    git rebase -i --autostash --autosquash $SHA^
+fi

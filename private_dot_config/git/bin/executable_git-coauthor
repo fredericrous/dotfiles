@@ -1,0 +1,16 @@
+#!/bin/sh
+# coauthor         Search author $name in previous commits and append the
+#                  trailer Co-authored-by to the last commit
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -ne 2 ]; then
+    printf "Usage:\n    git $SCRIPT_NAME \$name\n";
+    exit 1;
+fi
+set -e -o pipefail
+
+OLD_MSG=$(git log --format=%B -1)
+CO_AUTHOR=$(git log --format='%aN <%ae>' | sort -u | rg $1 --context=0)
+if [ ! -z \"$CO_AUTHOR\" ]; then
+    git commit --amend -m\"$OLD_MSG\" -m\"Co-authored-by: $CO_AUTHOR\"
+fi

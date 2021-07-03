@@ -1,0 +1,14 @@
+#!/bin/bash
+# author-rewrite   Search git history and replace $old_email by $name $new_email
+SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
+
+if [ "$#" -eq 3 ]; then
+    SHA=$(git rev-parse "$3");
+elif [ "$#" -eq 2 ]; then
+    SHA="HEAD";
+else
+    echo -e "Usage:\n    git $SCRIPT_NAME \$name \$email [\$hash]";
+    exit 1;
+fi
+
+git filter-repo --mailmap <(echo "$3 <$1> <$2>")

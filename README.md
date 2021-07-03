@@ -39,10 +39,33 @@ Apply dotfiles on the machine with
 chezmoi apply -v
 ```
 
-This command will apply the new changes from the repository and if the file on
-the machine changed, it will ask if you want to overwrite it or skip it.
-You can then merge the files with the command `chezmoi merge <file>`
-and run the `apply` command again.
+## Updating dotfiles
+
+To see the differences and resolve the conflict, use the commands:
+
+```sh
+chezmoi diff
+chezmoi merge <file-from-diff>
+```
+
+When the files from the local changed and you just
+want to override the repository, run:
+
+```sh
+chezmoi add <file>
+```
+
+It is the same command that is used to add new dotfiles to the repo.
+
+When the files from the repository changed, run
+
+```sh
+chezmoi apply
+```
+
+`apply` will add the files that aren't present in the home folder.
+It will asks for every file that has a diff if it should override it.
+The command `chezmoi merge <file>` helps resolving conflicts before running `apply` again.
 
 ## Troubleshout
 
