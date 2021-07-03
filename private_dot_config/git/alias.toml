@@ -5,13 +5,19 @@
         # br      Branch. use -r to list remote
         # ca      Amend commit
         # co      Checkout $branch. Create the branch if it doesn't exist
+        # l       Short log
         # ref     Reflog but prettier
+        # p       Push upstream
+        # s       Short Status
         # st      Status
         # tree    Log graph without commit messages
         br = branch
         ca = commit --amend
         co = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
+        l = log --oneline
+        p = push -u origin HEAD
         ref = reflog --pretty=reflog
+        s = status -sb
         st = status
         tree = log --color --graph --pretty=tree --abbrev-commit --date=local
 
@@ -30,16 +36,17 @@
         # fixup            Commit Staged files to a different commit $alias_or_id
         fixup = "!f() { TARGET=$(git rev-parse \"$1\"); git commit --fixup=$TARGET ${@:2} && EDITOR=true git rebase -i --autostash --autosquash $TARGET^; }; f"
         # replace-history  Look through git history to replace $old_text by $new_text
-        replace-history = "!f() { git filter-repo --replace-text <(echo "$1==>${2:***REMOVED***}"); }; f"
-        # resign           Sign previous $commit from $email.
-        #                  master.. signs the whole branch
-        resign = "!_() { : git checkout ; [ \"$#\" -eq 0 ] && echo 'Usage: resign <rev-list>' && exit 2; \
-                   git filter-branch --commit-filter ' \
-                   if [ \"$GIT_COMMITTER_EMAIL\" = \"$2\" ]; then git commit-tree -S \"$@\"; else git commit-tree \"$@\"; fi' $1; }; _"
+        replace-history = "!f() { \
+                 echo \"$1==>${2:REMOVED}\" > .git-replace-text; \
+                 git filter-repo --force --replace-text .git-replace-text ${@:3}; \
+                 rm .git-replace-text; }; f"
         # rewrite-author   Search git history and replace $old_email by $name $new_email
-        rewrite-author = "!f() { filter-repo --mailmap <(echo "$3 <$1> <$2>"); }; f"
+        rewrite-author = "!f() { \
+                 echo \"$3 <$1> <$2>\" > .git-rewrite-author \
+                 filter-repo --mailmap .git-rewrite-author; \
+                 rm .git-rewrite-author; }; f"
         # rm-history       Erase a $path from git history
-        rm-history = "!f() { git filter-repo --path \"$1\" --invert-paths; }; f"
+        rm-history = "!f() { git filter-repo --path \"$1\" --invert-paths ${@:2}; }; f"
         # subpull          Sync & update Submodules
         subpull = !git submodule sync && git submodule update --init --recursive --remote
 [pretty]
