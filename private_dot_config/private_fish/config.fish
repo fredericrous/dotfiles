@@ -1,9 +1,28 @@
 
+# tmpdir
+if not set -q TMPDIR
+  set -x TMPDIR /tmp
+end
+
+# xdg directories
 if not set -q XDG_CONFIG_HOME
   set -x XDG_CONFIG_HOME $HOME/.config
 end
 if not set -q XDG_DATA_HOME
   set -x XDG_DATA_HOME $HOME/.local/share
+end
+if not set -q XDG_BIN_HOME
+  set -x XDG_BIN_HOME $HOME/.local/bin
+end
+if not set -q XDG_CACHE_HOME
+  set -x XDG_CACHE_HOME $HOME/.cache
+end
+if not set -q XDG_RUNTIME_DIR
+  if mkdir -p "$TMPDIR/runtime" &>/dev/null
+    set -x XDG_RUNTIME_DIR "$TMPDIR/runtime"
+  else
+    set -x XDG_RUNTIME_DIR $TMPDIR
+  end
 end
 
 if test (uname -s) = "Darwin"
@@ -27,7 +46,7 @@ set -gx EDITOR /usr/bin/vim
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
 set -x LESS "--ignore-case --LONG-PROMPT --RAW-CONTROL-CHARS --tabs=4 --window=-4"
 
-set FZF_DEFAULT_OPTS_BASE \
+set -x FZF_DEFAULT_OPTS \
    --ansi --no-bold \
    --marker='*' \
    --cycle \
@@ -43,7 +62,7 @@ set fzf_dir_opts --bind 'ctrl-o:execute(command nvim {} >/dev/tty)'
 
 set -x WGETRC $XDG_CONFIG_HOME/wgetrc
 set -x RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgreprc"
-set -x GNUPGHOME "$XDG_CONFIG_HOME/gnupg"
+set -x GNUPGHOME "$HOME/.gnupg"
 set -x CURL_HOME "$XDG_CONFIG_HOME/curl"
 
 if test "$COLORTERM" = "truecolors"
@@ -61,7 +80,7 @@ set -gx LC_ALL en_US.UTF-8
 status is-interactive || exit
 
 starship init fish | source
-set -gx GPG_TTY (tty)
+set -x GPG_TTY (tty)
 source ~/.iterm2_shell_integration.(basename $SHELL)
 fish_vi_key_bindings
 fzf_configure_bindings --directory=\cf --git_log=\cg --git_status=\cs
