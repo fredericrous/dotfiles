@@ -71,3 +71,11 @@ To decrypt, import the key with
 ```sh
 gpg --import key
 ```
+
+## Similar repos
+
+- https://github.com/neersighted/dotfiles
+- https://github.com/twpayne/dotfiles
+- https://github.com/alrra/dotfiles
+- https://github.com/mathiasbynens/dotfiles
+
