@@ -1,6 +1,6 @@
 [user]
-	name = fredericrous
-	email = frederic.rousseau.fr@gmail.com
+	name = {{ .name }}
+	email = {{ .email }}
 	signingkey = B6EEF2F6A5ABF833927091F70355FC4371714951
 [branch]
 	autosetupmerge = always
@@ -8,9 +8,12 @@
 	sort = -committerdate
 [core]
 	autocrlf = input
-
+{{ if (eq .chezmoi.os "darwin") }}
 	editor = "/usr/bin/vim"
-
+{{ else }}
+ safecrlf = false
+ editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
+{{ end }}
 	eol = lf
 	excludesfile = ~/.config/git/gitignore
 	pager = delta
