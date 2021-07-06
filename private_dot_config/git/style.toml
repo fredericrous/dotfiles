@@ -1,6 +1,6 @@
 [blame]
-  coloring = highlightRecent
-  date = human
+    coloring = highlightRecent
+    date = human
 [color]
     ui = auto
 [color "blame"]
@@ -13,12 +13,13 @@
     head = "#959494"
     branch = "#d8712c"
 [color "diff"]
-    commit = "#d8712c bold"
+    commit = "#d8712c"
     frag = magenta bold
-    meta = "#d8712c"
+    meta = "#d8712c bold"
     new = green bold
     old = red bold
     whitespace = red reverse
+    remote = "#959494"
 [color "status"]
     added = "#d8712c bold"
     changed = "#b65d26"

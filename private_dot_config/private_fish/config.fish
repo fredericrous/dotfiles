@@ -49,6 +49,7 @@ set -x LESS "--ignore-case --LONG-PROMPT --RAW-CONTROL-CHARS --tabs=4 --window=-
 set -x FZF_DEFAULT_OPTS \
    --ansi --no-bold \
    --marker='*' \
+   --height 40% \
    --cycle \
    --layout=reverse --preview-window=wrap \
    --bind "'ctrl-\:toggle-preview'" \
