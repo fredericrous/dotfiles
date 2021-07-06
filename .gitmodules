@@ -1,0 +1,9 @@
+[submodule "dot_vim/bundle/vim-airline"]
+	path = dot_vim/bundle/vim-airline
+	url = https://github.com/vim-airline/vim-airline
+[submodule "dot_vim/bundle/vim-jsx"]
+	path = dot_vim/bundle/vim-jsx
+	url = https://github.com/mxw/vim-jsx
+[submodule "dot_vim/bundle/vim-toml"]
+	path = dot_vim/bundle/vim-toml
+	url = https://github.com/cespare/vim-toml
