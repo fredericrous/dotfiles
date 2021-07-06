@@ -4,8 +4,11 @@
 
 if not functions -q fisher
   curl -sSL https://git.io/fisher | source
-  fisher update
+else
+  echo "Fisher already installed. Update..
 end
+
+fisher update
 
 # run_once hash: {{ include "private_dot_config/private_fish/fish_plugins" | sha256sum }}
 # vi: ft=fish

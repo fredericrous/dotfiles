@@ -4,9 +4,11 @@
 if ! command -v brew &> /dev/null
 then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-    brew bundle --file=~/.config/Brewfile || true
 else
-    echo "Brew already installed. Skipping.."
+    echo "Brew already installed. Update.."
 fi
+brew bundle --file=~/.config/Brewfile || true
 
+# run_once hash: {{ include "private_dot_config/Brewfile" | sha256sum }}
+# vi: ft=fish
 {{ end -}}
