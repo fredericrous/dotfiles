@@ -1,0 +1,7 @@
+. ~/.bashrc
+export PATH="$PATH:$HOME/.rvm/bin"
+
+[[ ! $PS1 ]] && return
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+
+eval "$(starship init zsh)"

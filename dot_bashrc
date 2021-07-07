@@ -1,0 +1,42 @@
+export TMPDIR="/tmp"
+
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_CACHE_HOME="$HOME/.cache"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_BIN_HOME="$HOME/bin"
+
+if test $(uname -s) = "Darwin"; then
+  export PATH="$PATH:/usr/local/opt/coreutils/libexec/gnubin"
+  export PATH="$PATH:/usr/local/opt/gnu-sed/libexec/gnubin"
+fi
+
+export PATH="$PATH:$HOME/.rvm/bin"
+export PATH="$PATH:$XDG_CONFIG_HOME/git/bin"
+
+export EDITOR="/usr/bin/vim"
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+export LESS="--ignore-case --LONG-PROMPT --RAW-CONTROL-CHARS --tabs=4 --window=-4"
+
+export FZF_DEFAULT_OPTS="\
+   --ansi --no-bold \
+   --marker='*' \
+   --height 40% \
+   --cycle \
+   --layout=reverse --preview-window=wrap"
+export FZF_TMUX_DEFAULT_OPTS='-p 75%'
+export FZF_DEFAULT_COMMAND='fd --type=file --type=directory --hidden --color=always .'
+
+export WGETRC="$XDG_CONFIG_HOME/wgetrc"
+export RIPGREP_CONFIG_PATH="$XDG_CONFIG_HOME/ripgreprc"
+export GNUPGHOME="$HOME/.gnupg"
+export CURL_HOME="$XDG_CONFIG_HOME/curl"
+
+###################################
+# Interactive mode configurations #
+###################################
+[[ ! $PS1 ]] || [ "$0" = "$BASH_SOURCE" ] || [[ -n $ZSH_EVAL_CONTEXT && $ZSH_EVAL_CONTEXT =~ :file$ ]] && return
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+eval "$(starship init bash)"
+#export GPG_TTY="$( tty )"
+
