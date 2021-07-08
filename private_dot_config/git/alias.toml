@@ -18,12 +18,13 @@
         ref = reflog --pretty=reflog
         s = status -sb
         st = status
-        tree = log --color --graph --pretty=tree --abbrev-commit --date=local       
+        tree = log --color --graph --pretty=tree --abbrev-commit --date=local
         # subpull  Sync & update Submodules
         subpull = !git submodule sync && git submodule update --init --recursive --remote
         # 
         # Commands
-        # 
+        #
+        lsr = "!r() { refbranch=$1 count=$2; git for-each-ref --sort=-committerdate refs/heads --format='%(refname:short)|%(HEAD)%(color:#eb9602)%(refname:short)|%(color:#c0a001)%(committerdate:relative)|%(color:#949494)%(subject)|%(color:#949494)%(authorname)%(color:reset)' --color=always --count=${count:-20} | while read line; do branch=$(echo \"$line\" | awk 'BEGIN { FS = \"|\" }; { print $1 }' | tr -d '*'); ahead=$(git rev-list --count \"${refbranch:-master}..${branch}\"); behind=$(git rev-list --count \"${branch}..${refbranch:-master}\"); colorline=$(echo \"$line\" | sed 's/^[^|]*|//'); echo \"$ahead|$behind|$colorline\" | awk -F'|' -vOFS='|' '{$5=substr($5,1,70)}1' ; done | ( echo \"ahead|behind||branch|lastcommit|message|author\\n\" && cat) | column -ts'|';}; r" 
 [pretty]
         reflog = %C(auto)%h %<|(20)%gd %C(blue)%cr%C(reset) %gs (%s)
         tree = %Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen%ad (%cr) %C(bold blue)<%an>%Creset

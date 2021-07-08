@@ -2,10 +2,11 @@
 
 //minimal config
 module.exports = {
-  extends: ['eslint:recommended', 'plugin:prettier/recommended'],
+  extends: ['eslint:recommended'],
   env: {
     browser: true,
     es6: true,
+    node: true,
   },
   rules: {
     'arrow-body-style': ['error', 'as-needed'],
