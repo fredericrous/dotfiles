@@ -1,13 +1,50 @@
 {{ if (eq .chezmoi.os "darwin") -}}
-#!/bin/sh
+#!/bin/zsh
 
 if ! command -v brew &> /dev/null
 then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
-else
-    echo "Brew already installed. Update.."
+    brew bundle --file=~/.config/Brewfile || true
+    exit 0
 fi
-brew bundle --file=~/.config/Brewfile || true
+
+echo "Brew already installed. Update.."
+
+INSTALLED_FORMULAE=(`brew list --formula --quiet | sort -r`)
+INSTALLED_CASK=(`brew list --cask --quiet | sort -r`)
+
+SAVED_CASK=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|brew)" | sed -E 's@^cask\s+\"@@' | sed  s@'".*$@@' | sort`)
+SAVED_FORMULAE=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|cask)" | sed -E 's@^brew\s+\"@@' | sed  s@'".*$@@' | sort`)
+
+CASK=("${SAVED_CASK}")
+for element in "${INSTALLED_CASK[@]}"; do
+    CASK=(${CASK[@]/$element})
+done
+
+typeset -A del_formulae
+FORMULAE=()
+for element in "${INSTALLED_FORMULAE[@]}"; do
+    del_formulae[$element]=1
+done
+for k in "${SAVED_FORMULAE[@]}"; do
+    if [[ ! "${del_formulae[$k]}" ]]; then
+        FORMULAE=($k)
+    fi
+done
+
+typeset -A del_cask
+CASK=()
+for element in "${INSTALLED_CASK[@]}"; do
+    del_cask[$element]=1
+done
+for k in "${SAVED_CASK[@]}"; do
+    if [[ ! "${del_cask[$k]}" ]]; then
+        CASK=($k)
+    fi
+done
+
+brew install "${FORMULAE[@]}"
+brew install --cask "${CASK[@]}"
 
 # run_once hash: {{ include "private_dot_config/Brewfile" | sha256sum }}
 # vi: ft=fish
