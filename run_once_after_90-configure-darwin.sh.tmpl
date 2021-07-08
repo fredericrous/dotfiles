@@ -43,9 +43,17 @@ for k in "${SAVED_CASK[@]}"; do
     fi
 done
 
-brew install "${FORMULAE[@]}"
-brew install --cask "${CASK[@]}"
+if [ ${#FORMULAE[@]} -gt 0 ]; then
+    set -x
+    brew install "${FORMULAE[@]}"
+    set +x
+fi
 
+if [ ${#CASK[@]} -gt 0 ]; then
+    set -x
+    brew install --cask "${CASK[@]}"
+    set +x
+fi
 # run_once hash: {{ include "private_dot_config/Brewfile" | sha256sum }}
 # vi: ft=fish
 {{ end -}}

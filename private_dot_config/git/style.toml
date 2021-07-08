@@ -8,7 +8,7 @@
 [color "branch"]
     current = "#d8712c bold"
     local = "#d8712c"
-    remote = green
+    remote = "#eb9602"
 [color "decorate"]
     head = "#959494"
     branch = "#d8712c"
