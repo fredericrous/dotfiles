@@ -1,7 +1,3 @@
-[user]
-	name = {{ .name }}
-	email = {{ .email }}
-	signingkey = B6EEF2F6A5ABF833927091F70355FC4371714951
 [branch]
 	autosetupmerge = always
 	autosetuprebase = always
@@ -23,7 +19,6 @@
 	whitespace = space-before-tab,-indent-with-non-tab,trailing-space
 	attributesfile = ~/.config/git/attributes
 [commit]
-	gpgsign = true
 	template = ~/.config/git/git-templates/templates/message
 [credential]
 	helper = cache
@@ -70,6 +65,8 @@
 	path = alias.toml
 	path = style.toml
 [includeIf "gitdir:~/.local/share/chezmoi/**"]
-	path = ~/.config/git/gitconfig_perso.toml
-[includeIf "gitdir:~/Developer/Perso/**"]
-	path = ~/.config/git/gitconfig_perso.toml
+	path = ~/.config/git/config_perso.toml
+[includeIf "gitdir/i:~/Developer/Perso/**"]
+	path = ~/.config/git/config_perso.toml
+[includeIf "gitdir/i:~/Developer/Storyful/**"]
+	path = ~/.config/git/config_storyful.toml
