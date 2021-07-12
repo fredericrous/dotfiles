@@ -2,12 +2,14 @@
 
 //minimal config
 module.exports = {
+  root: true,
   extends: ['eslint:recommended'],
   env: {
     browser: true,
     es6: true,
     node: true,
   },
+  parserOptions: { ecmaVersion: 2021 },
   rules: {
     'arrow-body-style': ['error', 'as-needed'],
     'consistent-this': ['error', 'void'],
