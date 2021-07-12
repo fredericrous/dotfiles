@@ -24,7 +24,7 @@
 	attributesfile = ~/.config/git/attributes
 [commit]
 	gpgsign = true
-	template = ~/.config/git/templates/message
+	template = ~/.config/git/git-templates/templates/message
 [credential]
 	helper = cache
 [diff]
@@ -48,7 +48,7 @@
 	postBuffer = 157286400
 [init]
 	defaultBranch = main
-	templatedir = ~/.config/git/templates
+	templatedir = ~/.config/git/git-templates/templates
 [merge]
 	keepBackup = false
 	tool = p4merge
@@ -64,6 +64,8 @@
 	ff = only
 [rebase]
 	autoStash = true
+[url "git@github.com:"]
+	insteadOf = https://github.com/
 [include]
 	path = alias.toml
 	path = style.toml

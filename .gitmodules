@@ -8,5 +8,5 @@
 	path = dot_vim/bundle/vim-toml
 	url = https://github.com/cespare/vim-toml
 [submodule "private_dot_config/git/templates"]
-	path = private_dot_config/git/templates
+	path = private_dot_config/git/git-templates
 	url = https://github.com/fredericrous/git-templates.git
