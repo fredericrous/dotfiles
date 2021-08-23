@@ -9,7 +9,7 @@ Clone the repo with this [chezmoi](https://www.chezmoi.io/) command line:
 
 ```sh
 sh -c "$(curl -fsLS git.io/chezmoi)" -- init --apply fredericrous
-#OR: chezmoi init https://git.daddyshome.fr/fredericrous/dotfiles.git
+#OR: chezmoi init https://github.com/fredericrous/dotfiles.git
 ```
 
 Apply dotfiles on the machine with
