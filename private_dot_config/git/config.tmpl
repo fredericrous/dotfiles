@@ -3,14 +3,14 @@
 	autosetuprebase = always
 	sort = -committerdate
 [core]
-	autocrlf = input
+	autocrlf = false
 {{ if (eq .chezmoi.os "darwin") }}
 	editor = "/usr/bin/vim"
 {{ else }}
  safecrlf = false
  editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
 {{ end }}
-	eol = lf
+	eol = auto
 	excludesfile = ~/.config/git/gitignore
 	pager = delta
 	# Make `git rebase` safer on macOS.
@@ -28,11 +28,11 @@
 	textconv = hexdump -v -C
 [difftool]
 	prompt = false
+	keepBackup = false
 [difftool "p4merge"]
 	cmd = p4merge "$LOCAL" "$REMOTE"
 	keepTemporaries = false
 	trustExitCode = false
-	keepBackup = false
 [filter "lfs"]
 	required = true
 	clean = git-lfs clean -- %f
@@ -45,15 +45,14 @@
 	defaultBranch = main
 	templatedir = ~/.config/git/git-templates/templates
 [merge]
-	keepBackup = false
 	tool = p4merge
 [mergetool]
 	prompt = false
+	keepBackup = false
 [mergetool "p4merge"]
 	cmd = p4merge "$BASE" "$LOCAL" "$REMOTE" "$MERGED"
 	keepTemporaries = false
 	trustExitCode = false
-	keepBackup = false
 [pull]
 	rebase = true
 	ff = only

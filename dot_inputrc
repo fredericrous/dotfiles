@@ -2,5 +2,9 @@ set editing-mode vi
 $if mode == vi
     set keymap vi
     set keymap vi-insert
-#$endif
+$endif
+set meta-flag on
+set input-meta on
+set output-meta on
+set convert-meta off
 

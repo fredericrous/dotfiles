@@ -39,4 +39,5 @@ export CURL_HOME="$XDG_CONFIG_HOME/curl"
 
 eval "$(starship init bash)"
 #export GPG_TTY="$( tty )"
+export BASH_SILENCE_DEPRECATION_WARNING=1
 

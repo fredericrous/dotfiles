@@ -4,6 +4,7 @@
 #add_newline = false
 #[line_break]
 #disabled = true
+command_timeout = 1000
 
 [aws]
 style = "bg:#f9a600 fg:black"
@@ -121,6 +122,13 @@ format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
 style = "fg:black bg:#eb9606"
 format = "[](fg:black bg:#eb9606)[$symbol$version]($style)[](fg:#eb9606)"
 
+[shell]
+fish_indicator = ""
+bash_indicator = "bash "
+zsh_indicator = "zsh "
+powershell_indicator = ""
+format = "[$indicator](fg:#ad4007)"
+disabled = false
 [shlvl]
 symbol = " "
 style = "fg:black bg:#ad4007"

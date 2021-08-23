@@ -115,5 +115,8 @@
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "prettier.printWidth": 100,
-    "prettier.configPath": "~/.prettierrc.js"
+    "prettier.configPath": "~/.prettierrc.js",
+    "vim.handleKeys": {
+      "<C-d>": false
+    }
 }
