@@ -25,22 +25,30 @@ if not set -q XDG_RUNTIME_DIR
   end
 end
 
-if test (uname -s) = "Darwin"
-  set -gx ANDROID_HOME /Users/fredericrous/Library/AndroidSDK
-  set -gx JAVA_HOME /usr/local/opt/openjdk
-  set -gx PATH /usr/local/opt/coreutils/libexec/gnubin $PATH
-  set -gx PATH /usr/local/opt/gnu-sed/libexec/gnubin $PATH
-  set -gx PATH /Applications/p4merge.app/Contents/MacOS $PATH
-  set -gx PATH "$ANDROID_HOME/bin" $PATH
-  set -gx PATH "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" $PATH
-
-  set -g fish_user_paths "/usr/local/opt/openjdk/bin" $fish_user_paths
-  set -g fish_user_paths "/usr/local/opt/mysql-client/bin" $fish_user_paths
-
-  set -x HOMEBREW_BUNDLE_FILE $XDG_CONFIG_HOME/Brewfile
+if test -d /opt/homebrew
+    set -l HOMEBREW_HOME /opt/homebrew
+else if test -d /home/linuxbrew/.linuxbrew
+    set -l HOMEBREW_HOME /home/linuxbrew/.linuxbrew
+else
+    set -l HOMEBREW_HOME /usr/local
 end
 
-set -gx PATH $XDG_CONFIG_HOME/git/bin $PATH
+set -gx JAVA_HOME $HOMEBREW_HOME/opt/openjdk
+fish_add_path -P $HOMEBREW_HOME/opt/coreutils/libexec/gnubin \
+              $HOMEBREW_HOME/opt/gnu-sed/libexec/gnubin \
+              $HOMEBREW_HOME/bin \
+              "$HOMEBREW_HOME/opt/openjdk/bin" \
+              "$HOMEBREW_HOME/opt/mysql-client/bin" \
+              $XDG_CONFIG_HOME/git/bin
+
+set -x HOMEBREW_BUNDLE_FILE $XDG_CONFIG_HOME/Brewfile
+
+if test (uname -s) = "Darwin"
+  set -gx ANDROID_HOME $HOME/Library/AndroidSDK
+  fish_add_path --path "$ANDROID_HOME/bin" \
+                   /Applications/p4merge.app/Contents/MacOS
+                   "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+end
 
 set -gx EDITOR /usr/bin/vim
 set -gx MANPAGER "sh -c 'col -bx | bat -l man -p'"
@@ -82,7 +90,7 @@ status is-interactive || exit
 
 starship init fish | source
 set -x GPG_TTY (tty)
-source ~/.iterm2_shell_integration.(basename $SHELL)
+source $HOME/.iterm2_shell_integration.(basename $SHELL)
 fish_vi_key_bindings
 fzf_configure_bindings --directory=\cf --git_log=\cg --git_status=\cs
 
