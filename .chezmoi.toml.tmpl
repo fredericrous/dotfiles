@@ -1,10 +1,3 @@
-{{ $name := promptString "name" }}
-{{ $email := promptString "email" }}
-
-[data]
-	email = "{{ $email }}"
-	name = "{{ $name }}"
-
 [diff]
     pager = "delta"
 
@@ -15,4 +8,3 @@ encryption = "gpg"
 [merge]
     command = "nvim"
     args = "-d"
-
