@@ -3,5 +3,6 @@
     email = frederic.rousseau.fr@gmail.com
     signingkey = B6EEF2F6A5ABF833927091F70355FC4371714951
 [commit]
-  gpgsign = true
-
+    gpgsign = true
+[url "git@github.com:"]
+    insteadOf = https://github.com/
