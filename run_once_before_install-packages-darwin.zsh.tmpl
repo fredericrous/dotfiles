@@ -6,6 +6,15 @@ then
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
     eval "$(/opt/homebrew/bin/brew shellenv)"
     brew bundle --file=~/.config/Brewfile || true
+    if test -d /opt/homebrew; then
+        HOMEBREW_HOME=/opt/homebrew
+    elif test -d /home/linuxbrew/.linuxbrew; then
+        HOMEBREW_HOME=/home/linuxbrew/.linuxbrew
+    else
+        HOMEBREW_HOME=/usr/local
+    fi
+    sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
+    chsh -s $HOMEBREW_HOME/bin/fish
     exit 0
 fi
 
