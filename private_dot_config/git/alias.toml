@@ -1,9 +1,10 @@
 [alias]
         # Shortcuts
-        # 
+        #
         # br       Branch. use -r to list remote
         # ca       Amend commit
         # co       Checkout $branch. Create the branch if it doesn't exist
+        # dir      get .git directory. Useful in submodules
         # l        Short log
         # ref      Reflog but prettier
         # p        Push upstream
@@ -13,6 +14,7 @@
         br = branch
         ca = commit --amend
         co = "!f() { git checkout -b \"$1\" 2> /dev/null || git checkout \"$1\"; }; f"
+        dir = rev-parse --git-dir
         l = log --oneline
         p = push -u origin HEAD
         ref = reflog --pretty=reflog
@@ -21,7 +23,7 @@
         tree = log --color --graph --pretty=tree --abbrev-commit --date=local
         # subpull  Sync & update Submodules
         subpull = !git submodule sync && git submodule update --init --recursive --remote
-        # 
+        #
         # Commands
         #
         lsr = "!r() { refbranch=$1 count=$2; git for-each-ref --sort=-committerdate refs/heads --format='%(refname:short)|%(HEAD)%(color:#eb9602)%(refname:short)|%(color:#c0a001)%(committerdate:relative)|%(color:#949494)%(subject)|%(color:#949494)%(authorname)%(color:reset)' --color=always --count=${count:-20} | while read line; do branch=$(echo \"$line\" | awk 'BEGIN { FS = \"|\" }; { print $1 }' | tr -d '*'); ahead=$(git rev-list --count \"${refbranch:-master}..${branch}\"); behind=$(git rev-list --count \"${branch}..${refbranch:-master}\"); colorline=$(echo \"$line\" | sed 's/^[^|]*|//'); echo \"$ahead|$behind|$colorline\" | awk -F'|' -vOFS='|' '{$5=substr($5,1,70)}1' ; done | ( echo \"ahead|behind||branch|lastcommit|message|author\\n\" && cat) | column -ts'|';}; r" 
