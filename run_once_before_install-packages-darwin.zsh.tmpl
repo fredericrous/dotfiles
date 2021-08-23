@@ -13,9 +13,10 @@ then
     else
         HOMEBREW_HOME=/usr/local
     fi
-    sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
-    chsh -s $HOMEBREW_HOME/bin/fish
-    fish
+    if ! grep -q fish /etc/shells; then
+        sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
+        chsh -s $HOMEBREW_HOME/bin/fish
+    fi
     exit 0
 fi
 
