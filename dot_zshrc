@@ -1,5 +1,12 @@
 . ~/.bashrc
-export PATH="$PATH:$HOME/.rvm/bin"
+if test -d /opt/homebrew; then
+    HOMEBREW_HOME=/opt/homebrew
+elif test -d /home/linuxbrew/.linuxbrew; then
+    HOMEBREW_HOME=/home/linuxbrew/.linuxbrew
+else
+    HOMEBREW_HOME=/usr/local
+fi
+export PATH="$PATH:$HOMEBREW_HOME/bin:$HOME/.rvm/bin"
 
 [[ ! $PS1 ]] && return
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
