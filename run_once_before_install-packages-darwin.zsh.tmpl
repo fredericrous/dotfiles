@@ -17,6 +17,8 @@ then
         sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
         chsh -s $HOMEBREW_HOME/bin/fish
     fi
+    export PATH=$HOMEBREW_HOME/bin:$PATH
+    bw config server {{ .bwserver }}
     exit 0
 fi
 
