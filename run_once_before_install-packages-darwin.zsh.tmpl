@@ -34,8 +34,15 @@ echo "Brew already installed. Update.."
 INSTALLED_FORMULAE=(`brew list --formula --quiet | sort -r`)
 INSTALLED_CASK=(`brew list --cask --quiet | sort -r`)
 
-SAVED_CASK=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|brew)" | sed -E 's@^cask\s+\"@@' | sed  s@'".*$@@' | sort`)
-SAVED_FORMULAE=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|cask)" | sed -E 's@^brew\s+\"@@' | sed  s@'".*$@@' | sort`)
+if command -v gsed &> /dev/null
+then
+  SED=gsed
+else
+  SED=sed
+fi
+
+SAVED_CASK=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|brew)" | $SED -E 's@^cask\s+\"@@' | $SED  s@'".*$@@' | sort`)
+SAVED_FORMULAE=(`cat ~/.config/Brewfile | grep -v -E "^(tap|mas|cask)" | $SED -E 's@^brew\s+\"@@' | $SED  s@'".*$@@' | sort`)
 
 CASK=("${SAVED_CASK}")
 for element in "${INSTALLED_CASK[@]}"; do
