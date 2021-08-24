@@ -20,6 +20,7 @@ then
         chsh -s $HOMEBREW_HOME/bin/fish
     fi
     bw config server {{ .bwserver }}
+    bw login
     exit 0
 fi
 
