@@ -34,20 +34,20 @@ else
 end
 
 set -gx JAVA_HOME $HOMEBREW_HOME/opt/openjdk
-fish_add_path -P $HOMEBREW_HOME/opt/coreutils/libexec/gnubin \
-              $HOMEBREW_HOME/opt/gnu-sed/libexec/gnubin \
-              $HOMEBREW_HOME/bin \
-              "$HOMEBREW_HOME/opt/openjdk/bin" \
-              "$HOMEBREW_HOME/opt/mysql-client/bin" \
-              $XDG_CONFIG_HOME/git/bin
+set -gx PATH $HOMEBREW_HOME/opt/coreutils/libexec/gnubin $PATH
+set -gx PATH $HOMEBREW_HOME/opt/gnu-sed/libexec/gnubin  $PATH
+set -gx PATH $HOMEBREW_HOME/bin  $PATH
+set -gx PATH $XDG_CONFIG_HOME/git/bin
+set -g fish_user_paths "$HOMEBREW_HOME/opt/openjdk/bin" $fish_user_paths
+set -g fish_user_paths "$HOMEBREW_HOME/opt/mysql-client/bin" $fish_user_paths
 
 set -x HOMEBREW_BUNDLE_FILE $XDG_CONFIG_HOME/Brewfile
 
 if test (uname -s) = "Darwin"
   set -gx ANDROID_HOME $HOME/Library/AndroidSDK
-  fish_add_path --path "$ANDROID_HOME/bin" \
-                   /Applications/p4merge.app/Contents/MacOS \
-                   "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+  set -gx PATH "$ANDROID_HOME/bin" $PATH
+  set -gx PATH /Applications/p4merge.app/Contents/MacOS $PATH
+  set -gx PATH "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" $PATH
 end
 
 set -gx EDITOR /usr/bin/vim
