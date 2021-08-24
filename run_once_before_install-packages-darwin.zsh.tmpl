@@ -19,6 +19,10 @@ then
         sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
         chsh -s $HOMEBREW_HOME/bin/fish
     fi
+    if ! command -v uname &> /dev/null
+    then
+        sudo ln -s $HOMEBREW_HOME/opt/coreutils/bin/guname /usr/local/bin/uname
+    fi
     bw config server {{ .bwserver }}
     bw login
     exit 0
