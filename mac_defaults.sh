@@ -1,52 +1,10 @@
-#!/bin/zsh
-
-xcode-select --install
-brew bundle
-
-# Disable Startup Chime
-sudo nvram StartupMute=%01
-
-osascript -e 'tell application "System Events" to make login item at end with properties {path:"/Applications/Lightshot Screenshot.app", hidden:false}'
-
-sudo sh -c 'echo /usr/local/bin/fish >> /etc/shells'
-chsh -s /usr/local/bin/fish
-fish
-
-set -U fish_user_paths /usr/local/bin $fish_user_paths
-
-curl -L https://get.oh-my.fish | fish
-curl -sL https://git.io/fisher | source
-
-# `fish_config` then set lava
-set -U fish_color_normal normal
-set -U fish_color_command FF9400
-set -U fish_color_quote BF9C30
-set -U fish_color_redirection BF5B30
-set -U fish_color_end FF4C00
-set -U fish_color_error FFDD73
-set -U fish_color_param FFC000
-set -U fish_color_comment A63100
-set -U fish_color_match --background=brblue
-set -U fish_color_selection white --bold --background=brblack
-set -U fish_color_search_match bryellow --background=brblack
-set -U fish_color_history_current --bold
-set -U fish_color_operator 00a6b2
-set -U fish_color_escape 00a6b2
-set -U fish_color_cwd green
-set -U fish_color_cwd_root red
-set -U fish_color_valid_path --underline
-set -U fish_color_autosuggestion FFC473
-set -U fish_color_user brgreen
-set -U fish_color_host normal
-set -U fish_color_cancel -r
-set -U fish_pager_color_completion normal
-set -U fish_pager_color_description B3A06D yellow
-set -U fish_pager_color_prefix white --bold --underline
-set -U fish_pager_color_progress brwhite --background=cyan
-
-set -x LANG en_US.UTF-8
-
-curl -L https://iterm2.com/shell_integration/fish -o ~/.iterm2_shell_integration.fish
+#!/bin/sh
+## list from:
+##  - https://macos-defaults.com/
+##  - https://github.com/herrbischoff/awesome-macos-command-line
+##  - https://github.com/mathiasbynens/dotfiles/blob/main/.macos
+##  - https://github.com/phillbaker/dotfiles/blob/master/.osx
+## `defaults` can be listed with command: "defaults find <key>"
 
 osascript -e 'tell application "System Preferences" to quit'
 
@@ -55,13 +13,6 @@ sudo -v
 defaults write com.apple.AppleMultitouchTrackpad "TrackpadThreeFingerDrag" -int "3"
 defaults write com.apple.AppleMultitouchTrackpad "enableSecondaryClick" -bool "true"
 defaults write com.apple.AppleMultitouchTrackpad "trackpadCornerClickBehavior" -int "1"
-
-#### list from:
-####  - https://macos-defaults.com/
-####  - https://github.com/herrbischoff/awesome-macos-command-line
-####  - https://github.com/mathiasbynens/dotfiles/blob/main/.macos
-####  - https://github.com/phillbaker/dotfiles/blob/master/.osx
-#### `defaults` can be listed with command: "defaults find <key>"
 
 defaults write com.apple.dock "orientation" -string "left"
 defaults write com.apple.dock "tilesize" -int "44"
@@ -154,10 +105,10 @@ defaults write NSGlobalDomain AppleEnableSwipeNavigateWithScrolls -bool true
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad TrackpadThreeFingerHorizSwipeGesture -int 2
 
 # Use scroll gesture with the Ctrl (^) modifier key to zoom
-defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
-defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
+#defaults write com.apple.universalaccess closeViewScrollWheelToggle -bool true
+#defaults write com.apple.universalaccess HIDScrollZoomModifierMask -int 262144
 # Follow the keyboard focus while zoomed in
-defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
+#defaults write com.apple.universalaccess closeViewZoomFollowsFocus -bool true
 
 #Set Default Finder Location to Home Folder
 defaults write com.apple.finder NewWindowTarget -string "PfLo"
@@ -165,26 +116,6 @@ defaults write com.apple.finder NewWindowTargetPath -string "file://$HOME"
 
 killall Dock
 
-##### transmission #####
-
-# Don’t prompt for confirmation before downloading
-defaults write org.m0k.transmission DownloadAsk -bool false
-defaults write org.m0k.transmission MagnetOpenAsk -bool false
-
-# Don’t prompt for confirmation before removing non-downloading active transfers
-defaults write org.m0k.transmission CheckRemoveDownloading -bool true
-
-# Trash original torrent files
-defaults write org.m0k.transmission DeleteOriginalTorrent -bool true
-
-# Hide the donate message
-defaults write org.m0k.transmission WarningDonate -bool false
-# Hide the legal disclaimer
-defaults write org.m0k.transmission WarningLegal -bool false
-
-##### end transmission #####
-
-cp -r ./fonts/* ~/Library/Fonts/
-
 #xattr -cr /Applications/Adobe\ Zii\ 2020\ 5.1.8.app/
-#xattr -d -r com.apple.quarantine /Library/QuickLook/Video.qlgenerator
+sudo xattr -d -r com.apple.quarantine /Library/QuickLook/*
+xattr -d -r com.apple.quarantine ~/Library/QuickLook/*
