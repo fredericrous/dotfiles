@@ -2,7 +2,3 @@
     name = Frederic R
     email = frederic.rousseau@storyful.com
     signingkey = 0D462AB5F830995A960B126DB6017104C2C3777F
-[commit]
-    gpgsign = true
-[url "git@github.com:"]
-    insteadOf = https://github.com/
