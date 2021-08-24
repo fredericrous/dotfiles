@@ -46,7 +46,7 @@ set -x HOMEBREW_BUNDLE_FILE $XDG_CONFIG_HOME/Brewfile
 if test (uname -s) = "Darwin"
   set -gx ANDROID_HOME $HOME/Library/AndroidSDK
   fish_add_path --path "$ANDROID_HOME/bin" \
-                   /Applications/p4merge.app/Contents/MacOS
+                   /Applications/p4merge.app/Contents/MacOS \
                    "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
 end
 
