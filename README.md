@@ -2,6 +2,10 @@
 
 personal environment files
 
+## Requirements
+
+import your gpg keys
+
 ## Usage
 
 Clone the repo with this [chezmoi](https://www.chezmoi.io/) command line:

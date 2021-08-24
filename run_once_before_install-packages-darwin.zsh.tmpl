@@ -23,7 +23,8 @@ then
     then
         sudo ln -s $HOMEBREW_HOME/opt/coreutils/bin/guname /usr/local/bin/uname
     fi
-    bw config server {{ .bwserver }}
+    read -s -p "bitwarden server url: " PASSWORD
+    bw config server $PASSWORD
     bw login
     exit 0
 fi
