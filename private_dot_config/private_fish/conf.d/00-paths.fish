@@ -39,6 +39,7 @@ fish_add_path $HOMEBREW_HOME/opt/coreutils/libexec/gnubin \
               $HOMEBREW_HOME/bin \
               $HOMEBREW_HOME/sbin \
               $XDG_CONFIG_HOME/git/bin \
+              $XDG_BIN_HOME \
               "$HOMEBREW_HOME/opt/openjdk/bin" \
               "$HOMEBREW_HOME/opt/mysql-client/bin"
 
@@ -77,6 +78,7 @@ set -x WGETRC $XDG_CONFIG_HOME/wgetrc
 set -x RIPGREP_CONFIG_PATH "$XDG_CONFIG_HOME/ripgreprc"
 set -x GNUPGHOME "$HOME/.gnupg"
 set -x CURL_HOME "$XDG_CONFIG_HOME/curl"
+set -x N_PREFIX $HOME/.local
 
 if test "$COLORTERM" = "truecolors"
   set -gx LS_COLORS (vivid generate lava)
