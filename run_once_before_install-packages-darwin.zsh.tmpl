@@ -3,7 +3,7 @@
 
 if ! command -v brew &> /dev/null
 then
-    script_path=${0:a:h}
+    script_path=~/.local/share/chezmoi/
     sudo xcodebuild -license accept
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
     eval "$(/opt/homebrew/bin/brew shellenv)"
