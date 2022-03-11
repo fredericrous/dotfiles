@@ -1,3 +1,10 @@
+{{- $bwserver := "" -}}
+{{- if hasKey . "bwserver" -}}
+{{-   $bwserver = .bwserver -}}
+{{- else -}}
+{{-   $bwserver = promptString "bitwarden server url" -}}
+{{- end -}}
+
 [diff]
     pager = "delta"
 
@@ -8,13 +15,6 @@ encryption = "gpg"
 [merge]
     command = "nvim"
     args = "-d"
-
-{{- $bwserver := "" -}}
-{{- if hasKey . "bwserver" -}}
-{{-   $bwserver = .bwserver -}}
-{{- else -}}
-{{-   $bwserver = promptString "bitwarden server url" -}}
-{{- end -}}
 
 [data]
     bwserver = {{ $bwserver | quote }}
