@@ -8,3 +8,13 @@ encryption = "gpg"
 [merge]
     command = "nvim"
     args = "-d"
+
+{{- $bwserver := "" -}}
+{{- if hasKey . "bwserver" -}}
+{{-   $bwserver = .bwserver -}}
+{{- else -}}
+{{-   $bwserver = promptString "bitwarden server url" -}}
+{{- end -}}
+
+[data]
+    bwserver = {{ $bwserver | quote }}
