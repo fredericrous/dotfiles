@@ -4,16 +4,16 @@ colors:
   base2: 'eee8d5'
   yellow: 'b58900'
   background_color: '1a1a1a'
-  black: "000000"
-  orangedir: "e06206"
-  darkorange: "FF9400"
-  amber: "FFC100"
-  vermilion: "FF4B00"
-  alpine: "BF9C30"
-  christine: "BF5B30"
-  fire: "A63000"
-  kourkinova: "BF5B30"
-  chardonnay: "FFC373"
+  black: '000000'
+  orangedir: 'e06206'
+  darkorange: 'FF9400'
+  amber: 'FFC100'
+  vermilion: 'FF4B00'
+  alpine: 'BF9C30'
+  christine: 'BF5B30'
+  fire: 'A63000'
+  kourkinova: 'BF5B30'
+  chardonnay: 'FFC373'
 
 core:
   regular_file:
