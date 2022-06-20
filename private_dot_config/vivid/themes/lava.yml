@@ -19,6 +19,9 @@ core:
   regular_file:
     foreground: base0
 
+  reset_to_normal:
+    foreground: base0
+
   directory:
     foreground: orangedir
     font-style: bold
@@ -41,12 +44,29 @@ core:
     background: kourkinova
     font-style: bold
 
+  setuid:
+    foreground: yellow
+    background: black
+
+  setgid:
+    foreground: yellow
+    background: black
+
+  file_with_capability: {}
+
+  multi_hard_link: {}
+
   fifo:
     foreground: background_color
     background: kourkinova
     font-style: bold
 
   socket:
+    foreground: background_color
+    background: kourkinova
+    font-style: bold
+
+  door:
     foreground: background_color
     background: kourkinova
     font-style: bold
