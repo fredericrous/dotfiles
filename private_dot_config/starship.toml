@@ -1,14 +1,17 @@
 # https://starship.rs/config/
 # fredericrous
 
-#add_newline = false
-#[line_break]
-#disabled = true
 command_timeout = 1000
+right_format = """$time"""
+
+[time]
+disabled = false
+style = "#939594"
+format = "[$time]($style)"
 
 [aws]
 style = "bg:#f9a600 fg:black"
-symbol = " "
+symbol = "☁ "
 format = "[](fg:black bg:#f9a600)[$symbol$profile]($style)[](fg:#f9a600 bg:black)"
 
 [character]
