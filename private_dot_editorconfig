@@ -17,7 +17,7 @@ indent_style = tab
 [*.{bat,cmd,[Bb][Aa][Tt],[Cc][Mm][Dd]}]
 end_of_line = crlf
 
-[*.{yml,json,js,jsx,vue,scala}]
+[*.{yml,json,js,jsx,ts,tsx,vue,scala}]
 ident_size = 2
 
 [*.go]
