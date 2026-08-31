@@ -1,0 +1,24 @@
+
+# Client certificate for git.example.com.
+#
+# The forge and its package index both require mTLS. `curl` and `git` are
+# configured for it separately, but tools that speak HTTPS themselves are not
+# — `uv` reaching the private PyPI index is the one that bites. Without this
+# it fails with:
+#
+#     received fatal alert: CertificateRequired
+#
+# which names TLS rather than the missing certificate, so the fix is not
+# guessable from the error.
+#
+# ONE pem holding the certificate AND its key, which is the form
+# SSL_CLIENT_CERT expects; curl takes the two halves separately
+# (--cert/--key) and so has its own .crt/.key beside this.
+#
+# Guarded on the file existing, not just on the variable being unset: a
+# machine that has not been given the certificate yet is better off with the
+# variable absent than pointed at nothing, which makes tools fail to start a
+# TLS session at all rather than simply lacking a client cert.
+if not set -q SSL_CLIENT_CERT; and test -f $HOME/.config/mtls/privatehost-client.pem
+  set -x SSL_CLIENT_CERT $HOME/.config/mtls/privatehost-client.pem
+end
