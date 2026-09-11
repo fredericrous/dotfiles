@@ -12,7 +12,7 @@
 #
 # NOT here, deliberately: ~/.config/git/git-templates. That looks like the same
 # shape and is not — it is a SYMLINK to a working clone at
-# ~/Developer/Perso/git-templates, where amont is developed, so the hooks pick
+# ~/Developer/Perso/amont, where it is developed, so the hooks pick
 # up local edits live. An external there would delete the symlink and drop an
 # independent clone in its place. It is stored as symlink_git-templates.tmpl.
 
