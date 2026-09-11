@@ -1,0 +1,87 @@
+---
+name: worktree-sweep
+description: Audit every git worktree under ~/Developer and remove the ones whose work is merged and released. Use when worktrees have accumulated, when disk is tight, or after finishing a task in a worktree.
+---
+
+# worktree-sweep
+
+The counterpart to `worktree-task`. That skill creates one worktree and tears down
+the one you are standing in; this one sweeps every worktree on the machine that no
+longer has a reason to exist.
+
+```bash
+python3 ~/.claude/tools/worktree-sweep/sweep.py            # audit, change nothing
+python3 ~/.claude/tools/worktree-sweep/sweep.py --apply    # audit, then remove SWEEP-verdict worktrees
+python3 ~/.claude/tools/worktree-sweep/sweep.py --repo trade-agents --apply
+python3 ~/.claude/tools/worktree-sweep/sweep.py --json     # machine-readable
+```
+
+Removals are automatic under `--apply` — no per-worktree confirmation. That is
+deliberate: every gate below must pass first, and a swept worktree is one
+`git worktree add` from being recreated. Every removal is appended to
+`~/.claude/worktree-sweep/sweep.log`.
+
+The **local branch ref is kept** unless you pass `--prune-branches`. GitHub deletes
+the remote branch on merge (verified: `amont` `fix/trust-per-worktree` 404s after
+merge) while Forgejo keeps it (`default_delete_branch_after_merge: false`), so on
+GitHub repos the local ref can be the last *named* handle on the pre-squash commits.
+They stay reachable either way — in the object store and permanently as
+`refs/pull/<n>/head` — but a branch ref is free and a 1 GB worktree is not.
+
+## Gates — all must pass to earn a SWEEP verdict
+
+1. Not the primary checkout, not the current working directory, not `locked`,
+   no `.no-sweep` marker file inside it.
+2. On a real branch (detached HEAD is never swept) that is not the base branch.
+3. `git status --porcelain` is empty — no modified *and* no untracked files.
+4. Has an upstream, and zero commits ahead of it (nothing unpushed).
+5. A pull request for that branch exists and is **merged**.
+6. A `v*` tag contains the merge commit — *unless the repo has no `v*` tags at
+   all*, in which case merge is the release (see homelab below).
+
+## The one thing not to break
+
+A forge that cannot be reached yields **UNKNOWN**, and UNKNOWN never removes
+anything. This is not paranoia, it is the observed failure mode of both forges:
+
+- `gh` on an API timeout prints nothing and the naive read is "no PR exists".
+  Measured: `cluster-vision` reported no PR on one run and `#14 MERGED` on the
+  next; `amont#232` reported an empty merge commit while sitting on `main` as
+  `1288b4d`.
+- Forgejo's `/pulls` endpoint returns the **repo object** — a dict, not a list —
+  when given the unsupported `state=all`. Parsed loosely, that is an empty PR
+  list. `pr_forgejo` therefore requires an integer `number` *and* a `head` key
+  before it believes it has a PR.
+
+For a *keep* decision a false negative is harmless; for a *delete* decision it is
+data loss. Never "optimise" an UNKNOWN into a HOLD-equivalent that proceeds.
+
+## Forge specifics
+
+- **GitHub** (`fredericrous/*`): `gh pr list --head <branch> --state all`.
+- **Forgejo** (`{{ .forge.host }}`): needs *both* the mTLS client cert and the
+  `~/.netrc` token (see `~/.claude/CLAUDE.md`). Use `GET /pulls/{base}/{head}` —
+  one request per branch, ~14s. Do **not** page `/pulls?state=closed`; against
+  this forge that times out, which is how the three "missing" homelab PRs were
+  first mis-read as absent.
+- `default_delete_branch_after_merge` is **false** on the Forgejo repos, so a
+  surviving remote branch says nothing about merge state.
+- Both forges squash-merge, so `git merge-base --is-ancestor HEAD origin/main`
+  is useless here — a merged branch's commits never appear on `main`. The PR API
+  is the only reliable signal, and `git branch -d` will always refuse (which is why
+  `--prune-branches` uses `-D`, gated on a confirmed merge).
+
+## Release gate
+
+Repos ship on `v*` tags, so a merged PR is not yet deployed and the tool holds
+until a tag contains the merge commit. **homelab has zero `v*` tags** — it ships
+via Flux on merge — so for any repo with no `v*` tags the gate is skipped and
+merge counts as released. Without that carve-out homelab worktrees would never
+be sweepable.
+
+## Never
+
+- Never pass `--force` to `git worktree remove`. If it refuses because of an
+  untracked file, that file is the point — inspect it.
+- Never sweep on the strength of a local heuristic (branch merged into main,
+  remote branch deleted, commit subject matching a squash commit). Ask the forge.

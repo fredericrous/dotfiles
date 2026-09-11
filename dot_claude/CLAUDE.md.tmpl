@@ -1,0 +1,287 @@
+## Git stash policy (worktrees)
+
+This repo is used across multiple `git worktree` checkouts in parallel.
+`refs/stash` is SHARED across all worktrees of the same repo — a bare
+`git stash pop` or `git stash apply` run in one worktree can pull in another
+worktree's stashed changes. This is a real footgun for parallel agent work.
+
+**Rules:**
+
+1. NEVER run `git stash pop` or `git stash apply` without an explicit stash
+   reference (e.g. `stash@{2}`). Bare pop/apply is forbidden.
+2. Before any stash operation, run `git stash list` and confirm which entry
+   actually belongs to the current worktree (check the message/branch it was
+   made on) before touching it.
+3. Prefer the worktree-scoped helpers below over raw `git stash push/pop`.
+   They store the stash under a ref namespaced to the current worktree
+   (`refs/wtstash/<worktree-name>`) instead of the shared `refs/stash`, so
+   it's structurally impossible to pop the wrong worktree's stash.
+
+   - `gwt-stash-save` — stash current worktree's changes
+   - `gwt-stash-pop`  — restore this worktree's stashed changes
+
+   These are fish functions defined in `~/.config/fish/functions/`.
+
+4. If you (the agent) need to stash uncommitted changes as part of a task,
+   use `gwt-stash-save` / `gwt-stash-pop`, never raw `git stash`.
+5. If these helpers aren't available in the current shell (e.g. a non-fish
+   subshell), STOP and ask before running any `git stash pop`/`apply` —
+   do not guess which stash index is correct.
+
+## Git worktree isolation for agent work
+
+Do all substantive edit/commit work in a per-task `git worktree`, not in a
+repo's live/primary checkout — for every repo, not just the ones where this
+has bitten before.
+
+**Why:** the user often does their own git work (branch switches, commits,
+`pull --ff-only`, releases) in the same working copy while an agent is
+mid-task. A single working directory has one HEAD — concurrent branch
+switches or `git reset`/`checkout` collide, and this has repeatedly clobbered
+uncommitted agent work or the user's own in-progress changes (files "missing",
+edits silently reverted, changes mid-read).
+
+**How to apply:** `git fetch origin -q && git worktree add <path> -b <branch>
+origin/main` (or pass `isolation: "worktree"` to the Agent tool), do the work
+there, commit on the branch, rebase onto the latest `origin/main` before
+pushing, then remove the worktree. If you must work in the shared checkout,
+re-verify the current branch (`git branch --show-current`) before every
+edit/commit — never assume your branch is still checked out across turns.
+Use the `worktree-task` skill for the create/finish/cleanup steps rather than
+improvising them by hand.
+
+## Git hygiene
+
+- **Bash's cwd persists across tool calls.** When juggling multiple repos in
+  one session, never rely on ambient cwd for a mutating git command — a stray
+  earlier `cd` can retarget a commit into the wrong repo. Put the `cd` and the
+  git command in the same call (`cd /path/to/repo && git commit ...`) or use
+  `git -C /path/to/repo ...`.
+- **Run `git status` (or `git diff --cached --stat`) before every `git
+  commit`**, even after `git add <one-file>` — `git add` is additive and does
+  not un-stage anything staged earlier in the session (possibly unrelated
+  work). Prefer explicit file lists over `git add -A`/`-u`/`.`.
+- **Never force-push a git tag.** If a release needs a fix after tagging, cut
+  a new incremented version tag instead. Force-pushing a tag can trigger
+  duplicate/failed release runs and leaves registries/consumers uncertain
+  which build they actually got.
+- **In repos where a `v*` tag drives CI build/publish, never chain `git commit
+  && git tag vX && git push origin vX` in one shot.** A commit-msg hook can
+  reject the commit; the shell still proceeds to `git tag`, which then tags
+  the OLD HEAD — CI builds/publishes the new version number from stale code.
+  Commit first as its own step, verify `git log --oneline -1 HEAD` actually
+  advanced, only then tag and push. Verify the published artifact itself
+  (image sha / package version), not just "publish: success" — some
+  registries (npm) are immutable and a bad publish can't be overwritten,
+  only superseded by the next version. Use the `tag-release` skill for this
+  end-to-end rather than chaining the steps by hand.
+- **Commit-msg hooks in git-templates-managed repos enforce a subject ≤50
+  chars** (conventional-commit prefix, e.g. `feat(x): short subject`) —
+  write the bare subject with no emoji; a prepare-commit-msg hook
+  auto-prepends the gitmoji afterward, so a manually-added emoji prefix
+  eats into the 50-char budget and can push you over.
+- **Omit the `Co-Authored-By: Claude` trailer on commits landing in a repo
+  the user doesn't own** (upstream OSS, third-party forks being contributed
+  back, external PRs) — maintainers can reject PRs advertising AI
+  co-authorship. Keep the trailer on the user's own repos. Check `git remote
+  get-url origin` and the PR base to tell which case applies; when unsure,
+  ask before adding it (fixing it after the fact needs an amend + force-push).
+
+## Before pushing / declaring CI green
+
+- **Run the project's lint/format/test commands locally before every push** —
+  don't rely on CI to catch the first round of failures. Match the CI
+  commands exactly (same flags/toolchain).
+- **`gh run watch --exit-status` can report exit 0 for a run that actually
+  concluded `failure`.** After watching, explicitly verify:
+  `gh run view <run-id> --json conclusion --jq .conclusion` and check it's
+  `success` before proceeding (e.g. before a downstream manifest/version
+  bump).
+- **Scripted bulk edits (`str.replace` via a heredoc/script) silently no-op
+  when the target text doesn't match** (e.g. after a formatter reformatted
+  it). Assert each replacement actually landed rather than trusting exit
+  code 0.
+- **NEVER pipe a mutating command through `tail`/`head`/`grep` to trim its
+  output** — `git push … 2>&1 | tail -2`, `git commit … | tail -1`,
+  `kubectl apply … | tail -5`. A pipeline's exit status is the LAST
+  command's, so `tail` reports **0** however the real command ended, and the
+  trimmed log discards the error message: the failure is silent in both
+  channels. Run it bare; if output really must be trimmed, `set -o pipefail`
+  first or write to a file and tail the FILE. Then verify the EFFECT, not
+  the exit code — `git ls-remote origin refs/heads/<branch>` after a push,
+  `git log --oneline -1` after a commit. (Cost 2026-08-20: several pushes
+  reported "exited with code 0" and had never left the machine; a long
+  pre-push test gate had been killed mid-run under parallel-agent load, and
+  `| tail -2` masked it completely.)
+- **Before declaring any web-deploy/UI task done, load the live/rendered
+  result in a real browser** (Chrome MCP, or headless Playwright as
+  fallback) and check it's actually correct — don't stop at CI green, a
+  passing unit test, or a bundle grep. A workflow's `conclusion: success`
+  only means it didn't throw; the artifact it produced can still ship
+  broken, or a slow reconcile/rollout means the fix isn't live yet.
+- **When the user reports a visual bug, reproduce their exact view first**
+  (same route/mode/zoom/state) before writing a fix, and again after
+  deploying. Their words describe what they see, not which code path
+  renders it — two branches can look identical in a screenshot, so
+  inferring the code path from the description alone risks fixing the
+  wrong branch.
+
+## Repo ownership / PR workflow
+
+Work lands via **pull request**, on the user's own repos (`fredericrous/*`)
+as much as anywhere else. A `pre-push-branch-protect` git hook rejects a push
+to `main` outright ("Pushing to branch main is forbidden. Open a Pull
+Request."), so branch + PR is the only route — don't reach for
+`git push --no-verify` to get around it.
+
+The standing rule of confirming before destructive/hard-to-reverse operations
+(force-push, amending shared history, dropping branches) applies everywhere,
+including the user's own repos.
+
+**Never use `gh pr merge --auto` on the user's repos.** None of them have
+branch protection requiring status checks before merge, so `--auto` merges
+the PR immediately — before CI, including tests, has even started — instead
+of waiting for checks to go green like it does on a protected repo. To
+"merge when green": open the PR, poll `gh run view <run-id> --json
+status,conclusion` (or `gh pr checks <n>`) until `status=completed` and
+`conclusion=success`, THEN merge as a separate command. Never chain the poll
+and the merge in one compound command — read the poll result first. Use the
+`merge-when-green` skill for this instead of improvising the poll loop.
+
+## Forgejo API ({{ .forge.host }})
+
+The self-hosted forge is fully usable from this machine — opening/merging PRs,
+reading CI, repo admin — with **two** credentials, and BOTH are required:
+
+- the **mTLS client cert** at `~/.config/mtls/{{ .forge.slug }}-client.{crt,key}`
+  (the gateway enforces `optional: false`; without it curl dies at TLS with
+  `LibreSSL SSL_read ... error:1404C45C` and `%{http_code}` **000** — that is
+  a missing cert, NOT an auth rejection);
+- the **repo-scoped token in `~/.netrc`** (`machine {{ .forge.host }} login
+  daddy password <token>`), read with
+  `awk '/machine {{ .forge.host }}/{print $6}' ~/.netrc`.
+
+```sh
+TOK=$(awk '/machine {{ .forge.host }}/{print $6}' ~/.netrc)
+curl -sS --cert ~/.config/mtls/{{ .forge.slug }}-client.crt \
+        --key  ~/.config/mtls/{{ .forge.slug }}-client.key \
+        -H "Authorization: token $TOK" \
+        https://{{ .forge.host }}/api/v1/repos/fredericrous/<repo>/pulls
+```
+
+**The trap that cost an hour: do NOT probe `/api/v1/user` to test the token.**
+That endpoint needs `read:user`, a scope this token does not carry, so it 403s
+with `token does not have at least one of required scope(s): [read:user]` —
+which reads like a dead token and says nothing about repository access. Probe
+the endpoint you actually need (`/repos/{owner}/{repo}`) instead.
+
+Never echo the token into output, a commit, or a PR body — pass it through the
+`$TOK` variable only (see the URL-secret rule under Security).
+
+Details that don't belong here — the CI-log recipe (Forgejo has **no** log
+API), run-duration reading, AGit caveats — are in the `reference-forgejo-*`
+memories.
+
+## Shell environment
+
+The Bash tool runs commands through **zsh 5.9** (`/bin/zsh`), not bash and
+not fish. Fish is only the login shell shown in the environment header; the
+tool never uses it (verified 2026-09-09: `ps -p $$` → `/bin/zsh`, and 32,555
+transcript calls carry zsh's `(eval):N:` diagnostics and zero fish ones).
+Write bash-compatible syntax. Never write fish syntax (`set x (cmd)`,
+`for i in (seq 3); …; end`) — under zsh `(cmd)` is a glob and fails with
+`no matches found`.
+
+The zsh traps that actually bite, each verified live:
+
+- **`==` as a bare word aborts the whole script.** zsh's `EQUALS` option
+  turns a word starting with `=` into a command lookup: `echo === sep ===`
+  → `== not found`, and `[ "$a" == "b" ]` or `test x == y` →
+  `= not found`, and every clause after it is skipped. This is the
+  wait-loop killer: `until [ "$st" == "completed" ]; do …` dies on its
+  first iteration. Use `=` inside `[ ]`/`test`, or `[[ $a == b ]]` (fine
+  inside `[[ ]]`), and `---`/`###` for separators.
+- **A zero-match glob aborts the clause** (`NOMATCH`, on by default):
+  `no matches found: --include=*.yaml`. It fires INSIDE flag values too,
+  and the abort is per clause — in a `;` chain the next clause still runs
+  and the tool reports success, so the grep you wanted silently never ran
+  (measured: 86–95% of these came back green). Quote globs in flag values
+  (`--include='*.yaml'`), and prefer `find`/`git ls-files` over relying on
+  shell glob output.
+- **`status` is read-only** (`status=$(cmd)` → `read-only variable:
+  status`). `argv`, `version`, `PWD`, `pipestatus` are writable in zsh —
+  the longer read-only list was fish's. Prefer `ci_state`/`rc` anyway.
+
+- **`grep` is not grep, `find` is not find.** Claude Code's shell snapshot
+  runs `grep` as ugrep with `--ignore-files`: a recursive grep SILENTLY
+  skips every .gitignored path (dist/, node_modules/, build output) — exit
+  0, no message, even with no `.git` dir. Name the directory explicitly
+  (`grep -rn X node_modules/pkg` does search it), pass `--no-ignore-files`,
+  or use `command grep`. A missing path is a `ugrep: warning:` mid-stream,
+  not a fatal error, so a search that read nothing looks like one that found
+  nothing. `find` is bfs, a GNU superset — `-printf`, `-newermt` all work.
+- **Tool flavors on PATH:** GNU sed and full GNU coreutils come first
+  (`stat -c`, `date -d`, `readlink -f`, `sha256sum` all GNU); awk, xargs,
+  tar, column and diff are BSD. `sed -i ''` and `stat -f '%…'` are the two
+  BSD spellings that fail here — the latter succeeds into a wrong answer.
+
+`&&`/`||` chaining, heredocs, `$(cmd)`, `[[ ]]`, `for …; do … done`,
+`while`/`until`, `$((…))`, brace expansion, `local`/`export`, `2>&1 |`
+all work as in bash — none of them produced a single diagnostic in six
+weeks of transcripts.
+
+## Reading files and searching (overrides the bypass-mode default)
+
+Measured 2026-09-09 over 41,700 tool calls: files opened through Bash
+(`cat`, `sed -n`, `head`) were 31% of all tool-result bytes, re-reads of a
+file already read in the same session another 15%, and the Grep/Glob tools
+were used zero times. The harness's bypass-permissions prompt says to prefer
+Bash over the dedicated tools; this section overrides it for reading.
+
+- **Open files with the Read tool, not `cat`/`sed -n`/`head`.** Read has
+  line numbers, a size cap and `offset`/`limit`; a `cat` dumps the whole file
+  into context with none of that.
+- **Read with `offset`/`limit` on anything over ~300 lines.** Grep for the
+  anchor first (Grep tool, or `grep -n … | head`), then read a window around
+  it. The four largest results in the window were unbounded Reads of 67–86 KB.
+- **Search with the Grep and Glob tools** when the answer is a location; use
+  Bash `grep`/`rg` only for pipelines (`| wc -l`, `| sort | uniq -c`).
+- **Do not re-read a file you already have in context** unless it was edited
+  since. Edit/Write results confirm the change; re-reading to verify is the
+  15% bucket.
+- **When a tool result was persisted to a file** ("Output too large … saved
+  to …"), `grep`/`head -c` the saved file for the part you need. Reading it
+  back whole pays for the output twice (31 of 83 cases did).
+- Bash is still right for anything that runs a program, and `cat` is fine
+  inside a pipe or a heredoc.
+
+## Claude Code agent tooling
+
+When the session model is a Fable/Mythos `[1m]` (1M-context) variant,
+background `Agent` spawns that inherit it can fail at launch ("model may not
+exist or you may not have access") — sometimes only after the agent has
+already done real work, so the work is lost, not just the spawn. For any
+non-trivial background agent, pass an explicit `model` override (e.g.
+`opus`) instead of inheriting. If a spawn fails mid-flight, check the
+worktree/branch it was using before assuming the work is gone — a stalled
+agent often leaves a clean, compiling partial result worth resuming from
+rather than restarting.
+
+## Security
+
+When a secret rides in a URL (webhook URL, presigned S3 URL, any `?token=`
+query param), guarding your own log calls is not enough — silence the HTTP
+client library's own request logging too, since libraries like `httpx`,
+`urllib3`, and `boto3`/`botocore` log the full request URL at INFO by
+default. Clamp those loggers to WARNING at the entry point
+(`logging.getLogger("httpx").setLevel(logging.WARNING)`) so transport
+failures stay visible but the URL-embedded credential doesn't. The same
+applies anywhere a dependency echoes something you passed it back out
+(exception reprs, tracebacks, OTEL span attributes) — not just logging.
+
+## Communication style
+
+Surface an open action item (e.g. "you still need to rotate credential X") at
+most once, or again only when its context materially changes. Repeating a
+known open item in every summary reads as nagging. Track it in memory if it
+matters; don't re-mention it in every reply.

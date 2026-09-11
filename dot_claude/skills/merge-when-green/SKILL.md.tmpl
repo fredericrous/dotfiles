@@ -1,0 +1,114 @@
+---
+name: merge-when-green
+description: Poll a GitHub PR's checks until they pass, then merge it. Use whenever asked to "merge when green" or "merge once CI passes" — never gh pr merge --auto.
+---
+
+# merge-when-green
+
+Standing rule (see `~/.claude/CLAUDE.md` § Repo ownership / PR workflow): **never use `gh pr merge --auto`** on the user's repos. None of them have branch protection requiring status checks before merge, so `--auto` merges the PR *immediately*, before CI has even started, instead of waiting for checks like it would on a protected repo. This has broken `main` twice already (trade-agents, homelab, application-landscape) when checks were still running or actually red.
+
+## Args
+
+`args` = the PR number, or a branch/repo hint to find it. If omitted, resolve the PR for the current branch: `gh pr view --json number,url -q .number`.
+
+## Steps
+
+1. **Identify the PR.**
+   ```bash
+   gh pr view <n> --repo <owner>/<repo> --json number,url,headRefName
+   ```
+
+2. **Poll checks to completion — as a loop you can watch, not a single blind wait.** `gh run watch --exit-status` is unreliable (it has returned exit 0 for runs that actually concluded `failure` — see `~/.claude/CLAUDE.md` § Before pushing). Poll the PR's checks directly instead:
+   ```bash
+   gh pr checks <n> --repo <owner>/<repo>
+   ```
+   or, for a specific run:
+   ```bash
+   gh run view <run-id> --json status,conclusion --jq '{status,conclusion}'
+   ```
+   Loop until `status` is `completed` for all required checks. Use `until`/`sleep` in a single foreground command, or check back periodically — don't spin tightly.
+
+3. **Read the result BEFORE deciding to merge — as its own step, not chained into the merge command.** Never write something like `cat <poll-result>; gh pr merge ...` in one compound command — a background poller's stale/wrong output has previously caused a merge to fire on red checks because the merge ran unconditionally regardless of what the `cat` printed. Inspect the actual conclusion first, THEN issue the merge as a separate tool call.
+
+4. **If all required checks are `conclusion: success`:**
+   ```bash
+   gh pr merge <n> --repo <owner>/<repo> --squash
+   ```
+   (Squash is this user's default merge strategy unless told otherwise.)
+
+5. **If any check failed or is still running when asked to report status:** don't merge. Report which check(s) are red/pending and stop — let the user decide whether to wait, fix, or override.
+
+## Forgejo ({{ .forge.host }}) — `gh` does NOT work here
+
+`homelab`, `application-landscape` and the other self-hosted repos live on
+Forgejo, where every `gh` command above is unavailable. The RULES are
+identical (poll to completion, read the result as its own step, never
+auto-merge); only the transport changes. Both credentials are required — see
+`~/.claude/CLAUDE.md` § Forgejo API.
+
+```sh
+TOK=$(awk '/machine {{ .forge.host }}/{print $6}' ~/.netrc)
+CURL="curl -sS --cert $HOME/.config/mtls/{{ .forge.slug }}-client.crt --key $HOME/.config/mtls/{{ .forge.slug }}-client.key -H \"Authorization: token $TOK\""
+```
+
+**Poll the checks** — statuses hang off the HEAD SHA, not the PR:
+
+```sh
+# head sha
+$CURL "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/pulls/<n>" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['head']['sha'])"
+
+# every status for it, newest first
+$CURL "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/commits/<sha>/statuses"
+```
+
+TWO TRAPS, both of which have already cost a stuck poll:
+
+1. The value lives in **`status`** (`success` / `pending` / `failure` /
+   `skipped`); the `state` field is `null`. Reading `state` makes a green run
+   look unknown and a red one look green.
+2. The list is append-only — the same context appears once per transition — so
+   it must be deduped by `context`. **Do NOT dedupe by "keep the newest row":
+   two rows can share a timestamp to the second** and the API returns the
+   PENDING one first. A skipped job emits
+   `pending "Has started running"` and `success "Has been skipped"` both
+   stamped the same second, so "newest wins" pins it at `pending` forever and
+   an `until` loop never exits. **A TERMINAL status always wins over
+   `pending`.**
+
+```python
+TERMINAL = {"success", "failure", "error", "skipped"}
+best = {}
+for r in rows:                      # newest first, as returned
+    c, st = r["context"], r["status"]
+    if c not in best or (best[c] not in TERMINAL and st in TERMINAL):
+        best[c] = st
+```
+
+`skipped` counts as PASSING — a path-filtered job (golangci-lint on a
+YAML-only PR) legitimately skips and never reports success.
+
+The combined endpoint `/commits/<sha>/status` gives one roll-up `state`, but
+prefer the per-context list: it is the one that shows WHICH check is red.
+
+**Merge**, only after reading that result in a separate step:
+
+```sh
+$CURL -H "Content-Type: application/json" -X POST \
+  "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/pulls/<n>/merge" \
+  -d '{"Do":"merge"}' -w '\nHTTP %{http_code}\n'
+```
+
+`Do` is `merge` / `rebase` / `squash`. **These repos use merge commits** — their
+history is uniformly `Merge pull request '…' (#n)` — so `merge` is the default
+here, not the `--squash` above. Expect `HTTP 200`; verify by pulling `main` and
+checking the merge commit landed, never by the exit code alone.
+
+`merge_when_checks_succeed: true` exists in the API and is the Forgejo
+equivalent of `--auto` — **do not use it**, for the same reason: without
+required-checks protection configured it merges immediately.
+
+## Notes
+
+- The self-hosted `homelab` runner is often the slow part (image-build smoke tests can queue for many minutes) — the fast gating signal is usually the lint/typecheck/test job; don't mistake "one job green" for "all required checks green."
+- This applies to the user's own repos (`fredericrous/*`). For PRs into someone else's repo (upstream OSS, forks contributing back), merge timing/strategy is up to that repo's maintainers, not this workflow.
