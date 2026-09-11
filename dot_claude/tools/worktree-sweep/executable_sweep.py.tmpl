@@ -1,0 +1,794 @@
+#!/usr/bin/env python3
+"""Sweep git worktrees whose work is implemented, pushed, merged and released.
+
+Verdicts, and what each means:
+
+  SWEEP    every gate passed -- safe to remove. Nothing is lost: the branch is
+           still on the forge and the worktree is one `git worktree add` away.
+  HOLD     a gate said "not yet" and we trust that answer (open PR, dirty tree,
+           unpushed commits, merged but not yet in a release tag).
+  UNKNOWN  a gate could not be evaluated (forge unreachable, ambiguous state).
+           Treated exactly like HOLD for removal purposes.
+
+The distinction between HOLD and UNKNOWN is the whole point of this tool. Both
+forges in use here fail in ways that are indistinguishable from a negative
+answer if you are careless: `gh` prints nothing and exits 0-ish on an API
+timeout, and Forgejo's /pulls endpoint returns the bare *repo* object (a dict,
+not a list) when handed an unsupported `state=all`. Either one, read naively,
+says "no merged PR" -- which for a *keep* decision is harmless and for a
+*delete* decision is data loss. So every forge call that does not return a
+positively-parsed PR yields UNKNOWN, and UNKNOWN never removes anything.
+
+Two false HOLDs fixed 2026-09-11 (both erred safe, both gave the wrong reason):
+
+  * The ahead-count ran on cached refs. GitHub deletes a branch on merge, so
+    the stale origin/<branch> sat at the pre-squash commit and a finished
+    branch read "1 unpushed commit". Now: one `fetch --prune` per repo first,
+    and a branch with no surviving remote ref is proven pushed by ancestry of
+    origin/<base> or by the merged PR's head sha equalling HEAD.
+  * Forgejo lookups used /pulls/{base}/{head} with base=<default branch>, so a
+    PR stacked on another feature branch 404'd into "no pull request found".
+    Now a 404 consults the open-PR list (one request per repo) by head.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import threading
+import time
+import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from pathlib import Path
+
+HOME = Path.home()
+STATE_DIR = HOME / ".claude" / "worktree-sweep"
+STATE_FILE = STATE_DIR / "state.json"
+LOG_FILE = STATE_DIR / "sweep.log"
+DEFAULT_ROOTS = [HOME / "Developer"]
+
+FORGEJO_HOST = "{{ .forge.host }}"
+MTLS_CERT = HOME / ".config" / "mtls" / "{{ .forge.slug }}-client.crt"
+MTLS_KEY = HOME / ".config" / "mtls" / "{{ .forge.slug }}-client.key"
+NETRC = HOME / ".netrc"
+
+# The forge is slow over this path -- a single PR lookup measured 13-17s.
+FORGE_TIMEOUT = 60
+GIT_TIMEOUT = 120
+
+SWEEP, HOLD, UNKNOWN = "SWEEP", "HOLD", "UNKNOWN"
+
+# A forge that is down costs FORGE_TIMEOUT * retries *per branch*. With seven
+# worktrees on one host that is minutes of dead waiting for an answer already
+# known to be UNKNOWN. After this many consecutive failures, stop asking.
+CIRCUIT_TRIP = 3
+_circuit: dict[str, int] = {}
+_circuit_lock = threading.Lock()
+
+
+def circuit_open(forge: str) -> bool:
+    with _circuit_lock:
+        return _circuit.get(forge, 0) >= CIRCUIT_TRIP
+
+
+def circuit_record(forge: str, ok: bool):
+    with _circuit_lock:
+        _circuit[forge] = 0 if ok else _circuit.get(forge, 0) + 1
+
+
+# --------------------------------------------------------------------------
+# process helpers
+# --------------------------------------------------------------------------
+
+
+def run(args, cwd=None, timeout=GIT_TIMEOUT):
+    """Run a command. Returns (ok, stdout). ok is False on ANY failure path."""
+    try:
+        p = subprocess.run(
+            args,
+            cwd=str(cwd) if cwd else None,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return False, ""
+    return p.returncode == 0, p.stdout.strip()
+
+
+def git(repo, *args, timeout=GIT_TIMEOUT):
+    return run(["git", "-C", str(repo), *args], timeout=timeout)
+
+
+# --------------------------------------------------------------------------
+# model
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class Worktree:
+    path: Path
+    primary: Path
+    branch: str | None          # None => detached HEAD
+    head: str
+    locked: bool = False
+    prunable: bool = False
+
+    verdict: str = UNKNOWN
+    reason: str = ""
+    pr: str = ""
+    release: str = ""
+    size_kb: int = 0
+    # How "nothing unpushed" was established. "remote-ref": compared against the
+    # branch's own origin ref. "on-base": HEAD is an ancestor of origin/<base>.
+    # "pr-head": no remote ref survives, so the merged PR's head sha must equal
+    # HEAD -- that is proven only after the forge lookup, in classify().
+    pushed: str = ""
+
+    @property
+    def name(self) -> str:
+        try:
+            return str(self.path.relative_to(HOME / "Developer"))
+        except ValueError:
+            return f"{self.primary.name}:{self.path.name}"
+
+
+@dataclass
+class Repo:
+    path: Path
+    forge: str = "none"         # github | forgejo | none
+    owner: str = ""
+    name: str = ""
+    base: str = "main"
+    has_vtags: bool = False
+    worktrees: list[Worktree] = field(default_factory=list)
+    # Per-repo, once-only work shared by every worktree's classification.
+    # None = not attempted yet; the lock keeps 4 workers from racing it.
+    fetched: bool | None = None
+    open_prs: list | None = None            # forgejo: cached open-PR list
+    open_prs_failed: bool = False
+    lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+
+def ensure_fetched(repo: Repo) -> bool:
+    """`git fetch --prune` once per repo, before any ahead/behind arithmetic.
+
+    Without it the ahead-count compares against whatever remote-tracking ref
+    happens to be cached. GitHub deletes the branch on merge, so the stale
+    `origin/<branch>` lingers at the pre-squash commit and a finished branch
+    reads "1 unpushed commit" (seen on amont-agent chore/release-2.12.0, whose
+    HEAD *was* the squash commit already on main). Prune makes that ref
+    disappear; the pr-head proof in classify() then takes over.
+
+    A failed fetch is not fatal -- the gates still run on cached refs -- but
+    every verdict that leans on them says so.
+    """
+    with repo.lock:
+        if repo.fetched is None:
+            ok, _ = git(repo.path, "fetch", "origin", "--prune", "-q", timeout=FORGE_TIMEOUT)
+            repo.fetched = ok
+        return repo.fetched
+
+
+def stale_note(repo: Repo) -> str:
+    return "" if repo.fetched else " (fetch failed -- refs may be stale)"
+
+
+# --------------------------------------------------------------------------
+# discovery
+# --------------------------------------------------------------------------
+
+
+def parse_remote(url: str):
+    """git@host:owner/repo.git or https://host/owner/repo(.git) -> (forge, owner, repo)."""
+    if not url:
+        return "none", "", ""
+    host = path = ""
+    if url.startswith(("http://", "https://")):
+        u = urllib.parse.urlparse(url)
+        host, path = u.hostname or "", u.path.lstrip("/")
+    elif "@" in url and ":" in url:
+        hostpart, _, path = url.partition(":")
+        host = hostpart.rpartition("@")[2]
+    if path.endswith(".git"):
+        path = path[:-4]
+    parts = [p for p in path.split("/") if p]
+    if len(parts) < 2:
+        return "none", "", ""
+    owner, name = parts[-2], parts[-1]
+    if host == "github.com":
+        return "github", owner, name
+    if host == FORGEJO_HOST:
+        return "forgejo", owner, name
+    return "none", owner, name
+
+
+def discover(roots, max_depth=3) -> list[Repo]:
+    """Find primary checkouts (a real .git *directory*) and their linked worktrees."""
+    primaries: set[Path] = set()
+    for root in roots:
+        root = Path(root).expanduser()
+        if not root.is_dir():
+            continue
+        for dirpath, dirnames, _ in os.walk(root):
+            depth = len(Path(dirpath).relative_to(root).parts)
+            if depth >= max_depth:
+                dirnames[:] = []
+                continue
+            dirnames[:] = [d for d in dirnames if d not in {"node_modules", ".venv", "target", "dist"}]
+            if ".git" in dirnames:
+                # A linked worktree has .git as a *file*; only directories are primaries.
+                if (Path(dirpath) / ".git").is_dir():
+                    primaries.add(Path(dirpath).resolve())
+                dirnames.remove(".git")
+
+    repos: list[Repo] = []
+    for primary in sorted(primaries):
+        ok, out = git(primary, "worktree", "list", "--porcelain")
+        if not ok:
+            continue
+        repo = Repo(path=primary)
+        ok_r, url = git(primary, "remote", "get-url", "origin")
+        if ok_r:
+            repo.forge, repo.owner, repo.name = parse_remote(url)
+        ok_b, ref = git(primary, "symbolic-ref", "refs/remotes/origin/HEAD")
+        if ok_b and ref:
+            repo.base = ref.rsplit("/", 1)[-1]
+        ok_t, tags = git(primary, "tag", "-l", "v*")
+        repo.has_vtags = ok_t and bool(tags.strip())
+
+        cur = {}
+        entries = []
+        for line in out.splitlines() + [""]:
+            if not line.strip():
+                if cur:
+                    entries.append(cur)
+                cur = {}
+                continue
+            key, _, val = line.partition(" ")
+            cur[key] = val
+        for e in entries:
+            wt_path = Path(e.get("worktree", "")).resolve()
+            if wt_path == primary:
+                continue                       # the primary checkout is never swept
+            branch = e.get("branch")
+            if branch:
+                branch = branch.replace("refs/heads/", "")
+            repo.worktrees.append(
+                Worktree(
+                    path=wt_path,
+                    primary=primary,
+                    branch=None if "detached" in e else branch,
+                    head=e.get("HEAD", ""),
+                    locked="locked" in e,
+                    prunable="prunable" in e,
+                )
+            )
+        if repo.worktrees:
+            repos.append(repo)
+    return repos
+
+
+# --------------------------------------------------------------------------
+# forge adapters -- every failure path returns None (=> UNKNOWN)
+# --------------------------------------------------------------------------
+
+
+def forgejo_token():
+    try:
+        for line in NETRC.read_text().splitlines():
+            f = line.split()
+            if len(f) >= 6 and f[0] == "machine" and f[1] == FORGEJO_HOST:
+                return f[5]
+    except OSError:
+        pass
+    return None
+
+
+def pr_github(repo: Repo, branch: str):
+    ok, out = run(
+        [
+            "gh", "pr", "list",
+            "--repo", f"{repo.owner}/{repo.name}",
+            "--head", branch,
+            "--state", "all",
+            "--limit", "10",
+            "--json", "number,state,mergedAt,mergeCommit,headRefOid,baseRefName",
+        ],
+        timeout=FORGE_TIMEOUT,
+    )
+    if not ok or not out:
+        return None                            # timeout / auth / rate limit -> UNKNOWN
+    try:
+        data = json.loads(out)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, list):
+        return None
+    if not data:
+        return {"state": "NO-PR"}
+    merged = [p for p in data if p.get("state") == "MERGED"]
+    p = merged[0] if merged else data[0]
+    return {
+        "number": p.get("number"),
+        "state": p.get("state", ""),
+        "merge_sha": ((p.get("mergeCommit") or {}) or {}).get("oid", "") or "",
+        "head_sha": p.get("headRefOid") or "",
+        "base": p.get("baseRefName") or "",
+    }
+
+
+def forgejo_get(repo: Repo, path: str):
+    """GET one Forgejo API path. Returns (http_code, parsed_json) or (None, None)
+    on any transport failure -- callers must map that to UNKNOWN, never NO-PR."""
+    tok = forgejo_token()
+    if not tok or not MTLS_CERT.exists() or not MTLS_KEY.exists():
+        return None, None
+    ok, out = run(
+        [
+            "curl", "-sS", "--max-time", str(FORGE_TIMEOUT),
+            "--cert", str(MTLS_CERT), "--key", str(MTLS_KEY),
+            "-H", f"Authorization: token {tok}",
+            "-w", "\n%{http_code}",
+            f"https://{FORGEJO_HOST}/api/v1/repos/{repo.owner}/{repo.name}{path}",
+        ],
+        timeout=FORGE_TIMEOUT + 10,
+    )
+    if not ok or not out:
+        return None, None
+    body, _, code = out.rpartition("\n")
+    code = code.strip()
+    try:
+        return code, json.loads(body) if body.strip() else None
+    except json.JSONDecodeError:
+        return code, None
+
+
+def forgejo_open_prs(repo: Repo):
+    """The repo's open PRs, fetched once and shared by every branch lookup.
+
+    `state=open` is the one listing that answers quickly on this forge (the
+    closed listing is what times out). Returns None if it could not be read --
+    and that is sticky, so a dead forge costs one request, not one per branch.
+    """
+    with repo.lock:
+        if repo.open_prs is not None or repo.open_prs_failed:
+            return repo.open_prs
+        prs: list = []
+        page = 1
+        while True:
+            code, data = forgejo_get(repo, f"/pulls?state=open&limit=50&page={page}")
+            if code != "200" or not isinstance(data, list):
+                repo.open_prs_failed = True
+                return None
+            prs.extend(p for p in data if isinstance(p, dict) and "number" in p and "head" in p)
+            if len(data) < 50:
+                break
+            page += 1
+        repo.open_prs = prs
+        return prs
+
+
+def pr_forgejo(repo: Repo, branch: str):
+    # /pulls/{base}/{head} answers in one request. Paging /pulls?state=closed
+    # instead takes many requests against a slow forge and times out.
+    code, p = forgejo_get(
+        repo,
+        f"/pulls/{urllib.parse.quote(repo.base, safe='')}/{urllib.parse.quote(branch, safe='')}",
+    )
+    if code is None:
+        return None
+    if code == "404":
+        # Not "no PR" yet: this endpoint is keyed on the base branch, so a PR
+        # stacked on another feature branch (homelab#688 -> #687's branch) is
+        # invisible to it. Ask the open-PR list by head before concluding.
+        prs = forgejo_open_prs(repo)
+        if prs is None:
+            return None                        # could not check -> UNKNOWN
+        for o in prs:
+            if (o.get("head") or {}).get("ref") == branch:
+                return {
+                    "number": o.get("number"),
+                    "state": "OPEN",
+                    "merge_sha": "",
+                    "head_sha": (o.get("head") or {}).get("sha") or "",
+                    "base": (o.get("base") or {}).get("ref") or "",
+                }
+        return {"state": "NO-PR"}
+    if code != "200":
+        return None
+    # Guard the documented trap: an unsupported query makes this endpoint hand
+    # back the repo object. A PR always carries an integer "number" and a "head".
+    if not isinstance(p, dict) or "number" not in p or "head" not in p:
+        return None
+    return {
+        "number": p.get("number"),
+        "state": "MERGED" if p.get("merged_at") else p.get("state", "").upper(),
+        "merge_sha": p.get("merge_commit_sha") or "",
+        "head_sha": (p.get("head") or {}).get("sha") or "",
+        "base": (p.get("base") or {}).get("ref") or "",
+    }
+
+
+def lookup_pr(repo: Repo, branch: str):
+    fn = {"github": pr_github, "forgejo": pr_forgejo}.get(repo.forge)
+    if fn is None:
+        return None
+    for attempt in range(2):
+        # Re-checked every attempt, not just once up front: with N workers all
+        # blocked on the same dead host, the breaker has to be able to open
+        # *underneath* an in-flight wave, or every worker pays the full retry.
+        if circuit_open(repo.forge):
+            return None
+        res = fn(repo, branch)
+        if res is not None:
+            circuit_record(repo.forge, True)
+            return res
+        circuit_record(repo.forge, False)   # per attempt, so the breaker trips inside wave 1
+        if attempt == 0 and not circuit_open(repo.forge):
+            time.sleep(2)
+    return None
+
+
+# --------------------------------------------------------------------------
+# classification
+# --------------------------------------------------------------------------
+
+
+def local_gates(wt: Worktree, repo: Repo) -> bool:
+    """Cheap, offline gates. Returns True only if still a candidate."""
+    cwd = Path.cwd().resolve()
+    if wt.path == cwd or wt.path in cwd.parents:
+        wt.verdict, wt.reason = HOLD, "in use (current working directory)"
+        return False
+    if wt.locked:
+        wt.verdict, wt.reason = HOLD, "worktree is locked"
+        return False
+    if (wt.path / ".no-sweep").exists():
+        wt.verdict, wt.reason = HOLD, "opted out (.no-sweep)"
+        return False
+    if wt.prunable or not wt.path.exists():
+        wt.verdict, wt.reason = SWEEP, "prunable (path gone)"
+        return False
+    if wt.branch is None:
+        wt.verdict, wt.reason = HOLD, "detached HEAD -- no branch to trace"
+        return False
+    if wt.branch in {repo.base, "main", "master"}:
+        wt.verdict, wt.reason = HOLD, f"checked out on {wt.branch}"
+        return False
+
+    ok, dirty = git(wt.path, "status", "--porcelain")
+    if not ok:
+        wt.verdict, wt.reason = UNKNOWN, "git status failed"
+        return False
+    if dirty:
+        wt.verdict, wt.reason = HOLD, f"{len(dirty.splitlines())} uncommitted change(s)"
+        return False
+
+    # Everything below is ref arithmetic, so refresh the refs first -- and
+    # prune, so a branch the forge deleted on merge stops masquerading as a
+    # remote ref frozen at its pre-squash commit.
+    ensure_fetched(repo)
+
+    # Compare against the branch's OWN remote ref when there is one, not
+    # whatever `@{upstream}` happens to be. A branch created with
+    # `git switch -c <name> origin/main` tracks origin/main, so once it is
+    # squash-merged its commit is in no upstream and the branch reads as
+    # "1 unpushed commit" — a false HOLD on work that is finished. Observed
+    # on this tool's own release branch.
+    upstream = None
+    if git(wt.path, "rev-parse", "--verify", "-q", f"refs/remotes/origin/{wt.branch}")[0]:
+        upstream = f"origin/{wt.branch}"
+    else:
+        ok, tracked = git(wt.path, "rev-parse", "--abbrev-ref", "@{upstream}")
+        if ok and tracked and tracked != f"origin/{repo.base}":
+            upstream = tracked
+    if upstream:
+        ok, ahead = git(wt.path, "rev-list", "--count", f"{upstream}..HEAD")
+        if not ok:
+            wt.verdict, wt.reason = UNKNOWN, "could not compare against upstream"
+            return False
+        if ahead != "0":
+            wt.verdict, wt.reason = HOLD, f"{ahead} unpushed commit(s){stale_note(repo)}"
+            return False
+        wt.pushed = "remote-ref"
+        return True
+
+    # No remote ref of its own. After --prune that is what every merged GitHub
+    # branch looks like, so it is NOT "never pushed" yet. Two proofs remain:
+    # HEAD already sits on origin/<base> (fast-forward, or the branch was reset
+    # to the squash commit), or -- decided later, with the forge's answer --
+    # the merged PR's head sha IS this HEAD.
+    ok, _ = git(wt.path, "merge-base", "--is-ancestor", "HEAD", f"origin/{repo.base}")
+    wt.pushed = "on-base" if ok else "pr-head"
+    return True
+
+
+def classify(wt: Worktree, repo: Repo):
+    if not local_gates(wt, repo):
+        return
+
+    pr = lookup_pr(repo, wt.branch)
+    if pr is None:
+        wt.verdict, wt.reason = UNKNOWN, f"{repo.forge} unreachable -- refusing to guess"
+        return
+    if pr.get("state") == "NO-PR":
+        if wt.pushed == "pr-head":
+            wt.verdict, wt.reason = HOLD, "no remote ref and no pull request -- never pushed"
+        else:
+            wt.verdict, wt.reason = HOLD, f"no pull request found (none open, none merged into {repo.base})"
+        return
+
+    wt.pr = f"#{pr.get('number')}:{pr.get('state')}"
+    # A PR whose base is another feature branch is stacked: merging it lands
+    # nothing on <base>, so say so -- the reader otherwise assumes main.
+    into = f" into {pr['base']}" if pr.get("base") and pr["base"] != repo.base else ""
+    if pr.get("state") != "MERGED":
+        wt.verdict, wt.reason = HOLD, f"PR #{pr.get('number')} is {pr.get('state').lower()}{into}"
+        return
+    if into:
+        wt.verdict, wt.reason = HOLD, f"PR #{pr.get('number')} merged{into}, not {repo.base}"
+        return
+
+    if wt.pushed == "pr-head":
+        # The only remaining proof that this HEAD ever left the machine.
+        head_sha = pr.get("head_sha", "")
+        if not head_sha:
+            wt.verdict, wt.reason = UNKNOWN, "no remote ref, and forge gave no PR head to compare"
+            return
+        if head_sha != wt.head:
+            wt.verdict = HOLD
+            wt.reason = (f"PR #{pr.get('number')} merged at {head_sha[:12]} but HEAD is "
+                         f"{wt.head[:12]} -- local commits after the merge?")
+            return
+
+    sha = pr.get("merge_sha", "")
+    if not repo.has_vtags:
+        # homelab has zero v* tags -- it ships via Flux on merge, so a release
+        # gate there would mean nothing is ever swept. Merge is the release.
+        wt.verdict = SWEEP
+        wt.reason = f"PR #{pr.get('number')} merged (repo has no release tags)"
+        return
+
+    if not sha:
+        wt.verdict, wt.reason = UNKNOWN, "merged, but forge returned no merge commit"
+        return
+    ok, _ = git(repo.path, "cat-file", "-e", sha + "^{commit}")
+    if not ok:
+        git(repo.path, "fetch", "origin", "--tags", "-q")
+        ok, _ = git(repo.path, "cat-file", "-e", sha + "^{commit}")
+        if not ok:
+            wt.verdict, wt.reason = UNKNOWN, f"merge commit {sha[:12]} not present locally"
+            return
+    ok, tags = git(repo.path, "tag", "--contains", sha)
+    if not ok:
+        wt.verdict, wt.reason = UNKNOWN, "could not read tags"
+        return
+    vtags = [t for t in tags.splitlines() if t.startswith("v")]
+    if not vtags:
+        wt.verdict = HOLD
+        wt.reason = f"PR #{pr.get('number')} merged, awaiting a release tag"
+        return
+    wt.release = sorted(vtags)[-1]
+    wt.verdict = SWEEP
+    wt.reason = f"PR #{pr.get('number')} merged, released in {wt.release}"
+
+
+# --------------------------------------------------------------------------
+# actions
+# --------------------------------------------------------------------------
+
+
+def measure(wt: Worktree):
+    ok, out = run(["du", "-sk", str(wt.path)], timeout=180)
+    if ok and out:
+        try:
+            wt.size_kb = int(out.split()[0])
+        except (ValueError, IndexError):
+            pass
+
+
+def human(kb: int) -> str:
+    if kb <= 0:
+        return "-"
+    for unit, div in (("G", 1024 * 1024), ("M", 1024)):
+        if kb >= div:
+            return f"{kb / div:.1f}{unit}"
+    return f"{kb}K"
+
+
+def log(msg: str):
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    with LOG_FILE.open("a") as fh:
+        fh.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')} {msg}\n")
+
+
+def remove(wt: Worktree, prune_branch: bool = False) -> tuple[bool, str]:
+    """Remove a SWEEP worktree. Never --force: an unexpected untracked file
+    must abort the removal, not be bulldozed."""
+    if wt.prunable or not wt.path.exists():
+        ok, _ = git(wt.primary, "worktree", "prune")
+        if ok:
+            log(f"PRUNED {wt.path} (stale registration)")
+            return True, "pruned"
+        return False, "prune failed"
+
+    ok, out = run(["git", "-C", str(wt.primary), "worktree", "remove", str(wt.path)])
+    if not ok:
+        return False, "git worktree remove refused"
+    detail = f"released={wt.release}" if wt.release else "no-release-tag-gate"
+    log(f"REMOVED {wt.path} branch={wt.branch} pr={wt.pr} {detail}")
+    if wt.branch and prune_branch:
+        # `-D`, not `-d`: both forges squash-merge, so `-d` always refuses.
+        # Off by default -- GitHub deletes the remote branch on merge (verified:
+        # amont fix/trust-per-worktree 404s), so the local ref can be the last
+        # named handle on the pre-squash commits. They stay reachable via
+        # refs/pull/<n>/head and the object store, but a branch ref is free and
+        # a worktree is not: the disk win is the worktree, so keep the ref.
+        git(wt.primary, "branch", "-D", wt.branch)
+        log(f"BRANCH-DELETED {wt.branch} in {wt.primary}")
+    return True, "removed"
+
+
+# --------------------------------------------------------------------------
+# reporting
+# --------------------------------------------------------------------------
+
+
+def save_state(repos: list[Repo]):
+    """Persist the audit for --nudge to read.
+
+    A run in which every forge lookup failed (forge down, laptop offline) carries
+    no information -- it says UNKNOWN about everything. Writing that over a good
+    snapshot would make --nudge go quiet for a week and hide real accumulation,
+    so a wholly-degraded run leaves the previous state alone.
+    """
+    live = [w for r in repos for w in r.worktrees if w.path.exists()]
+    forge_answered = [w for w in live if w.pr or "unreachable" not in w.reason]
+    if live and not forge_answered and STATE_FILE.exists():
+        print("[worktree-sweep] every forge lookup failed — keeping the previous "
+              "snapshot rather than recording a blind one.", file=sys.stderr)
+        return
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "ts": time.time(),
+        "worktrees": [
+            {
+                "path": str(w.path), "repo": r.path.name, "branch": w.branch,
+                "verdict": w.verdict, "reason": w.reason, "pr": w.pr,
+                "release": w.release, "size_kb": w.size_kb,
+            }
+            for r in repos for w in r.worktrees
+            if w.path.exists()
+        ],
+    }
+    STATE_FILE.write_text(json.dumps(payload, indent=2))
+
+
+def nudge():
+    """Fast, offline, silent-unless-actionable. Runs as a SessionStart hook, so
+    it must never make a network call and must never delete anything."""
+    n_wt = 0
+    for root in DEFAULT_ROOTS:
+        for p in Path(root).glob("*/*"):
+            gitfile = p / ".git"
+            if gitfile.is_file():           # a linked worktree
+                n_wt += 1
+    if n_wt == 0:
+        return 0
+    stale_days = None
+    if STATE_FILE.exists():
+        try:
+            ts = json.loads(STATE_FILE.read_text()).get("ts", 0)
+            stale_days = int((time.time() - ts) / 86400)
+        except (json.JSONDecodeError, OSError):
+            pass
+    if stale_days is not None and stale_days < 7:
+        try:
+            data = json.loads(STATE_FILE.read_text())
+        except (json.JSONDecodeError, OSError):
+            data = {"worktrees": []}
+        sweepable = [w for w in data.get("worktrees", []) if w.get("verdict") == SWEEP]
+        if not sweepable:
+            return 0
+        kb = sum(w.get("size_kb", 0) for w in sweepable)
+        print(f"[worktree-sweep] {len(sweepable)} worktree(s) sweepable, {human(kb)} — run /worktree-sweep")
+        return 0
+    when = "never" if stale_days is None else f"{stale_days}d ago"
+    print(f"[worktree-sweep] {n_wt} linked worktree(s); last swept {when} — run /worktree-sweep")
+    return 0
+
+
+PRUNE_BRANCHES = False
+
+
+def report(repos: list[Repo], apply: bool):
+    rows = [(r, w) for r in repos for w in r.worktrees]
+    order = {SWEEP: 0, UNKNOWN: 1, HOLD: 2}
+    rows.sort(key=lambda rw: (order[rw[1].verdict], rw[1].name))
+
+    width = max((len(w.name) for _, w in rows), default=10)
+    for _, w in rows:
+        mark = {SWEEP: "SWEEP  ", HOLD: "hold   ", UNKNOWN: "UNKNOWN"}[w.verdict]
+        print(f"{mark} {w.name:<{width}}  {human(w.size_kb):>6}  {w.reason}")
+
+    sweepable = [(r, w) for r, w in rows if w.verdict == SWEEP]
+    total = sum(w.size_kb for _, w in sweepable)
+    print()
+    if not sweepable:
+        print("Nothing to sweep.")
+        return 0
+    if not apply:
+        print(f"{len(sweepable)} sweepable, {human(total)} — re-run with --apply to remove.")
+        return 0
+
+    freed = 0
+    for _, w in sweepable:
+        ok, what = remove(w, prune_branch=PRUNE_BRANCHES)
+        print(f"  {'✓' if ok else '✗'} {w.name}: {what}")
+        if ok:
+            freed += w.size_kb
+            w.verdict, w.reason, w.size_kb = HOLD, "removed by sweep", 0
+    # Re-save: the pre-apply snapshot still lists everything just removed, and
+    # --nudge reads that file. A stale cache here nags about work already done.
+    save_state(repos)
+    print(f"\nFreed {human(freed)}. Log: {LOG_FILE}")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Sweep merged-and-released git worktrees.")
+    ap.add_argument("--apply", action="store_true", help="remove SWEEP-verdict worktrees")
+    ap.add_argument("--nudge", action="store_true", help="fast offline one-liner for a SessionStart hook")
+    ap.add_argument("--prune-branches", action="store_true",
+                    help="also delete the local branch ref after removing a worktree")
+    ap.add_argument("--repo", help="limit to one repo (directory name)")
+    ap.add_argument("--json", action="store_true", help="emit machine-readable state")
+    ap.add_argument("--root", action="append", help="search root (default ~/Developer)")
+    ap.add_argument("--lookup", nargs=2, metavar=("REPO", "BRANCH"),
+                    help="debug: print the raw forge answer for one branch and exit")
+    args = ap.parse_args()
+
+    global PRUNE_BRANCHES
+    PRUNE_BRANCHES = args.prune_branches
+
+    if args.nudge:
+        return nudge()
+
+    if not shutil.which("git"):
+        print("git not found", file=sys.stderr)
+        return 1
+
+    repos = discover(args.root or DEFAULT_ROOTS)
+    if args.lookup:
+        name, branch = args.lookup
+        repo = next((r for r in repos if r.path.name == name), None)
+        if repo is None:
+            print(f"no repo with worktrees named {name!r}", file=sys.stderr)
+            return 1
+        print(json.dumps({"forge": repo.forge, "base": repo.base,
+                          "pr": lookup_pr(repo, branch)}, indent=2))
+        return 0
+    if args.repo:
+        repos = [r for r in repos if r.path.name == args.repo]
+
+    jobs = [(r, w) for r in repos for w in r.worktrees]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(lambda rw: classify(rw[1], rw[0]), jobs))
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(lambda rw: measure(rw[1]), jobs))
+
+    save_state(repos)
+    if args.json:
+        print(STATE_FILE.read_text())
+        return 0
+    return report(repos, args.apply)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
