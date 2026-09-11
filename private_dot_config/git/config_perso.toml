@@ -6,4 +6,3 @@
     gpgsign = true
 [url "ssh://git@github.com/"]
 	pushInsteadOf = https://github.com/
-

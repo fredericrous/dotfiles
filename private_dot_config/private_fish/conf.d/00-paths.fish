@@ -41,7 +41,8 @@ fish_add_path $HOMEBREW_HOME/opt/coreutils/libexec/gnubin \
               $XDG_CONFIG_HOME/git/bin \
               $XDG_BIN_HOME \
               "$HOMEBREW_HOME/opt/openjdk/bin" \
-              "$HOMEBREW_HOME/opt/mysql-client/bin"
+              "$HOMEBREW_HOME/opt/mysql-client/bin" \
+              $HOMEBREW_HOME/opt/llvm/bin
 
 set -x HOMEBREW_BUNDLE_FILE $XDG_CONFIG_HOME/Brewfile
 set UNAME uname
@@ -49,10 +50,12 @@ if command -v guname &> /dev/null
   set UNAME guname
 end
 if test ($UNAME -s) = "Darwin"
-  set -gx ANDROID_HOME $HOME/Library/AndroidSDK
+  set -gx ANDROID_HOME $HOME/Library/Android/sdk/
   fish_add_path "$ANDROID_HOME/bin" \
                 /Applications/p4merge.app/Contents/MacOS \
-                "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
+                /Applications/Docker.app/Contents/Resources/bin/ \
+                "/Applications/Visual Studio Code.app/Contents/Resources/app/bin" \
+                 /usr/local/opt/libpq/bin
 end
 
 set -gx EDITOR /usr/bin/vim

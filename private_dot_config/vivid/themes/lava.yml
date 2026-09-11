@@ -1,3 +1,5 @@
+# Author: https://github.com/fredericrous
+# Inspired by the Lava theme for Fish-Shell
 colors:
   base01: '6b3608'
   base0: '839496'
@@ -138,6 +140,9 @@ media:
   fonts:
     foreground: kourkinova
 
+  3d:
+    foreground: kourkinova
+
 office:
   foreground: christine
   font-style: bold
@@ -151,3 +156,4 @@ executable:
 
 unimportant:
   foreground: base01
+

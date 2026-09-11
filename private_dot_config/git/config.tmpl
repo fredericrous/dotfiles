@@ -4,13 +4,10 @@
 	sort = -committerdate
 [core]
 	autocrlf = false
-{{ if (eq .chezmoi.os "darwin") }}
+
 	editor = "/usr/bin/vim"
-{{ else }}
- safecrlf = false
- editor = "'C:/Program Files/Sublime Text 3/subl.exe' -w"
-{{ end }}
-	eol = auto
+
+	eol = native
 	excludesfile = ~/.config/git/gitignore
 	pager = delta
 	# Make `git rebase` safer on macOS.
@@ -55,7 +52,6 @@
 	trustExitCode = false
 [pull]
 	rebase = true
-	ff = only
 [rebase]
 	autoStash = true
 [include]
@@ -66,3 +62,30 @@
 [includeIf "gitdir/i:~/Developer/Perso/**"]
 	path = ~/.config/git/shared_config.toml
 	path = ~/.config/git/config_perso.toml
+{{- if .work.dir }}
+[includeIf "gitdir/i:~/Developer/{{ .work.dir }}/**"]
+	path = ~/.config/git/shared_config.toml
+	path = ~/.config/git/{{ .work.config }}
+{{- end }}
+[http "https://{{ .forge.host }}/"]
+	sslCert = /Users/fredericrous/certs/gitea-client-active.pem
+[amont "agent.bare-stash-pop"]
+	stance = deny
+[amont "agent.no-verify"]
+	stance = deny
+[amont "agent.gh-pr-merge-auto"]
+	stance = deny
+[amont "agent.git-add-broad"]
+	stance = observe
+[credential "https://github.com"]
+	helper = 
+	helper = !/usr/local/bin/gh auth git-credential
+[credential "https://gist.github.com"]
+	helper = 
+	helper = !/usr/local/bin/gh auth git-credential
+[amont "agent.stdin-hang"]
+	stance = deny
+[amont "agent.sed-in-place"]
+	stance = deny
+[amont "agent.foreground-poll"]
+	stance = deny

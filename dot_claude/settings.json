@@ -1,0 +1,107 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export KUBECONFIG=*)",
+      "Bash(kubectl get *)",
+      "Bash(kubectl logs *)",
+      "Bash(npm run typecheck *)",
+      "Bash(npm test *)",
+      "Bash(npx vitest run *)",
+      "Bash(npx playwright test *)",
+      "Bash(cargo test *)",
+      "Bash(cargo build *)",
+      "Bash(uvx ruff@latest check *)",
+      "Bash(uvx ruff check *)",
+      "Bash(uv run --frozen pytest *)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__read_console_messages",
+      "mcp__claude-in-chrome__find",
+      "mcp__claude-in-chrome__get_page_text",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__list_console_messages",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__list_network_requests"
+    ]
+  },
+  "model": "opus[1m]",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "/Users/fredericrous/.claude/tools/worktree-sweep/sweep.py",
+              "--nudge"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "gopls-lsp@claude-plugins-official": true,
+    "clangd-lsp@claude-plugins-official": false,
+    "swift-lsp@claude-plugins-official": false
+  },
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "agentPushNotifEnabled": true
+}

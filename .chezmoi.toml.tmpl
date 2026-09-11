@@ -26,3 +26,7 @@ encryption = "gpg"
 [data.forge]
     host = {{ promptStringOnce . "forge.host" "private forge host (blank if none)" | quote }}
     slug = {{ promptStringOnce . "forge.slug" "short name used for its mTLS pem" | quote }}
+
+[data.work]
+    dir = {{ promptStringOnce . "work.dir" "work dir under ~/Developer (blank if none)" | quote }}
+    config = {{ promptStringOnce . "work.config" "its git identity file" | quote }}
