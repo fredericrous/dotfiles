@@ -63,7 +63,19 @@ data loss. Never "optimise" an UNKNOWN into a HOLD-equivalent that proceeds.
   `~/.netrc` token (see `~/.claude/CLAUDE.md`). Use `GET /pulls/{base}/{head}` —
   one request per branch, ~14s. Do **not** page `/pulls?state=closed`; against
   this forge that times out, which is how the three "missing" homelab PRs were
-  first mis-read as absent.
+  first mis-read as absent. That endpoint is keyed on the base branch, so a
+  **stacked PR** (base = another feature branch, e.g. homelab#688 → #687's
+  branch) 404s; on a 404 the tool consults `/pulls?state=open` (fast, cached
+  once per repo) by head before believing "no PR". A PR merged into a feature
+  branch is a HOLD, not a SWEEP — nothing reached `main`.
+- **Refs are fetched first.** One `git fetch --prune` per repo runs before any
+  ahead-count. GitHub deletes the branch on merge, so without the prune the
+  stale `origin/<branch>` sits at the pre-squash commit and finished work reads
+  "1 unpushed commit". A branch with no surviving remote ref is proven pushed
+  either by being an ancestor of `origin/<base>` or by the merged PR's head sha
+  equalling the worktree HEAD; otherwise it holds as "never pushed".
+- `--lookup <repo> <branch>` prints the raw forge answer for one branch — use
+  it to interrogate a verdict you don't believe.
 - `default_delete_branch_after_merge` is **false** on the Forgejo repos, so a
   surviving remote branch says nothing about merge state.
 - Both forges squash-merge, so `git merge-base --is-ancestor HEAD origin/main`
