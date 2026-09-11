@@ -1,0 +1,51 @@
+# Upstream code that lives in the home directory but is not ours to edit.
+#
+# WHY EXTERNALS AND NOT SUBMODULES. These were git submodules of the source
+# repository, which is the wrong tool twice over: a fresh `chezmoi init` does
+# not initialise them (so the plugins are silently absent until someone runs
+# `git submodule update --init`), and keeping them current means a commit to
+# the dotfiles repo for every upstream bump. An external is chezmoi's own
+# concept — it clones on apply and refreshes on a period, with no commit here.
+#
+# HTTPS, not SSH: these are fetched during bootstrap, before any key exists on
+# the machine, and every one of them is public.
+#
+# NOT here, deliberately: ~/.config/git/git-templates. That looks like the same
+# shape and is not — it is a SYMLINK to a working clone at
+# ~/Developer/Perso/git-templates, where amont is developed, so the hooks pick
+# up local edits live. An external there would delete the symlink and drop an
+# independent clone in its place. It is stored as symlink_git-templates.tmpl.
+
+# vim plugins, loaded by pathogen/packages out of ~/.vim/bundle.
+# refreshPeriod is a week: plugin updates are never urgent, and a shorter
+# period puts a network call in front of ordinary chezmoi runs.
+
+[".vim/bundle/vim-airline"]
+type = "git-repo"
+url = "https://github.com/vim-airline/vim-airline.git"
+refreshPeriod = "168h"
+[".vim/bundle/vim-airline".pull]
+args = ["--ff-only"]
+
+[".vim/bundle/vim-jsx"]
+type = "git-repo"
+url = "https://github.com/mxw/vim-jsx.git"
+refreshPeriod = "168h"
+[".vim/bundle/vim-jsx".pull]
+args = ["--ff-only"]
+
+[".vim/bundle/vim-toml"]
+type = "git-repo"
+url = "https://github.com/cespare/vim-toml.git"
+refreshPeriod = "168h"
+[".vim/bundle/vim-toml".pull]
+args = ["--ff-only"]
+
+# Present in ~/.vim/bundle and used, but managed by nothing until now — it
+# would simply have been missing on the next machine.
+[".vim/bundle/vim-prettier"]
+type = "git-repo"
+url = "https://github.com/prettier/vim-prettier.git"
+refreshPeriod = "168h"
+[".vim/bundle/vim-prettier".pull]
+args = ["--ff-only"]
