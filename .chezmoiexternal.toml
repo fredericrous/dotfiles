@@ -10,7 +10,7 @@
 # HTTPS, not SSH: these are fetched during bootstrap, before any key exists on
 # the machine, and every one of them is public.
 #
-# NOT here, deliberately: ~/.config/git/git-templates. That looks like the same
+# NOT here, deliberately: ~/.config/git/amont. That looks like the same
 # shape and is not — it is a SYMLINK to a working clone at
 # ~/Developer/Perso/amont, where it is developed, so the hooks pick
 # up local edits live. An external there would delete the symlink and drop an
