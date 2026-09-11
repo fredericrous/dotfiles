@@ -1,0 +1,127 @@
+{{ if (eq .chezmoi.os "darwin") -}}
+#!/bin/zsh
+# Bring this machine's packages in step with ~/.config/Brewfile.
+#
+# run_once_AFTER, not before. The update path reads the DEPLOYED Brewfile, and
+# a `before` script runs while that file is still the previous apply's copy —
+# so it compares against a stale list, finds nothing missing, and chezmoi then
+# records the script as run and never retries. That is exactly how
+# `brew "git-gui"` (pushed from another machine 2025-09-06) stayed uninstalled
+# here: the guard fired, read the old Brewfile, and reported all clear.
+#
+# The trailing `run_once hash:` line is load-bearing — it re-arms this script
+# whenever the Brewfile changes. Without it, run_once means once per machine,
+# ever, and every later package addition is silently skipped.
+
+set -u
+
+SOURCE_DIR={{ .chezmoi.sourceDir | quote }}
+BUNDLE=~/.config/Brewfile
+
+if [ ! -r "$BUNDLE" ]; then
+  echo "install-packages: no Brewfile at $BUNDLE — nothing to do." >&2
+  exit 0
+fi
+
+if ! command -v brew &> /dev/null
+then
+    sudo xcodebuild -license accept
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+    brew bundle install --file="$BUNDLE" --no-upgrade || true
+    brew link node
+
+    if test -d /opt/homebrew; then
+        HOMEBREW_HOME=/opt/homebrew
+    elif test -d /home/linuxbrew/.linuxbrew; then
+        HOMEBREW_HOME=/home/linuxbrew/.linuxbrew
+    else
+        HOMEBREW_HOME=/usr/local
+    fi
+    if ! grep -q fish /etc/shells; then
+        sudo sh -c "echo $HOMEBREW_HOME/bin/fish >> /etc/shells"
+        chsh -s $HOMEBREW_HOME/bin/fish
+    fi
+    if ! command -v uname &> /dev/null
+    then
+        sudo ln -s $HOMEBREW_HOME/opt/coreutils/bin/guname /usr/local/bin/uname
+    fi
+
+    # `fish_config` then set lava
+    set -U fish_color_normal normal
+    set -U fish_color_command FF9400
+    set -U fish_color_quote BF9C30
+    set -U fish_color_redirection BF5B30
+    set -U fish_color_end FF4C00
+    set -U fish_color_error FFDD73
+    set -U fish_color_param FFC000
+    set -U fish_color_comment A63100
+    set -U fish_color_match --background=brblue
+    set -U fish_color_selection white --bold --background=brblack
+    set -U fish_color_search_match bryellow --background=brblack
+    set -U fish_color_history_current --bold
+    set -U fish_color_operator 00a6b2
+    set -U fish_color_escape 00a6b2
+    set -U fish_color_cwd green
+    set -U fish_color_cwd_root red
+    set -U fish_color_valid_path --underline
+    set -U fish_color_autosuggestion FFC473
+    set -U fish_color_user brgreen
+    set -U fish_color_host normal
+    set -U fish_color_cancel -r
+    set -U fish_pager_color_completion normal
+    set -U fish_pager_color_description B3A06D yellow
+    set -U fish_pager_color_prefix white --bold --underline
+    set -U fish_pager_color_progress brwhite --background=cyan
+
+    chmod +x "$SOURCE_DIR/mac_defaults.sh"
+    "$SOURCE_DIR/mac_defaults.sh"
+    chmod +x "$SOURCE_DIR/private_dot_config/private_fish/fish_theme.fish"
+    "$SOURCE_DIR/private_dot_config/private_fish/fish_theme.fish"
+
+    curl -L https://iterm2.com/shell_integration/fish -o ~/.iterm2_shell_integration.fish
+
+    bw config server "{{ .bwserver }}"
+    bw login
+    exit 0
+fi
+
+# Steady state: install Brewfile FORMULAE that are absent. Nothing else.
+#
+# Deliberately not `brew bundle install`, though it is the obvious answer and
+# is idempotent: this Brewfile's cask/tap/mas lines have drifted years out of
+# date (deprecated homebrew/cask-fonts, GUI apps installed by hand or dropped
+# on purpose, an App Store VPN), so `bundle install` would tap four taps and
+# install six casks nobody asked for on the next apply. Reconciling that is a
+# deliberate act, not a side effect of `chezmoi apply`. Scope here matches
+# what the previous version of this script actually did.
+#
+# `brew bundle list` is brew's own Brewfile parser — it understands quoting,
+# `link: false`, aliases and renames, which the two-stage sed it replaced did
+# not. And `missing+=(...)` is the fix for the real bug: the old code wrote
+# `FORMULAE=($k)`, overwriting the array each pass, so it only ever
+# remembered the LAST missing package.
+echo "Brew already installed. Checking $BUNDLE .."
+
+missing=()
+while IFS= read -r formula; do
+  [ -n "$formula" ] || continue
+  brew list --formula --versions -- "$formula" >/dev/null 2>&1 || missing+=("$formula")
+done < <(brew bundle list --formula --file="$BUNDLE")
+
+if (( ${#missing[@]} > 0 )); then
+  echo "installing: ${missing[*]}"
+  brew install -- "${missing[@]}"
+else
+  echo "all Brewfile formulae present."
+fi
+
+# Casks and App Store apps are reported, never installed — so drift is
+# visible without this script quietly changing what is on the machine.
+HOMEBREW_NO_AUTO_UPDATE=1 brew bundle check --file="$BUNDLE" --no-upgrade >/dev/null 2>&1 \
+  || echo "note: casks/taps/mas in $BUNDLE are not all present — 'brew bundle check --verbose --file=$BUNDLE' to see them."
+
+# run_once hash: {{ include "private_dot_config/Brewfile" | sha256sum }}
+# vi: ft=fish
+{{ end -}}
