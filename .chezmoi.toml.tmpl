@@ -5,10 +5,11 @@
 {{-   $bwserver = promptString "bitwarden server url" -}}
 {{- end -}}
 
+encryption = "gpg"
+
 [diff]
     pager = "delta"
 
-encryption = "gpg"
 [gpg]
     recipient = "B6EEF2F6A5ABF833927091F70355FC4371714951"
 
@@ -17,4 +18,11 @@ encryption = "gpg"
     args = "-d"
 
 [data]
+    # The private forge. Prompted, never committed: the repo is public, so the
+    # host lives in THIS file (which is generated into ~/.config/chezmoi and
+    # is not part of the source tree).
     bwserver = {{ $bwserver | quote }}
+
+[data.forge]
+    host = {{ promptStringOnce . "forge.host" "private forge host (blank if none)" | quote }}
+    slug = {{ promptStringOnce . "forge.slug" "short name used for its mTLS pem" | quote }}

@@ -1,5 +1,5 @@
 
-# Client certificate for git.example.com.
+# Client certificate for {{ .forge.host }}.
 #
 # The forge and its package index both require mTLS. `curl` and `git` are
 # configured for it separately, but tools that speak HTTPS themselves are not
@@ -19,6 +19,6 @@
 # machine that has not been given the certificate yet is better off with the
 # variable absent than pointed at nothing, which makes tools fail to start a
 # TLS session at all rather than simply lacking a client cert.
-if not set -q SSL_CLIENT_CERT; and test -f $HOME/.config/mtls/privatehost-client.pem
-  set -x SSL_CLIENT_CERT $HOME/.config/mtls/privatehost-client.pem
+if not set -q SSL_CLIENT_CERT; and test -f $HOME/.config/mtls/{{ .forge.slug }}-client.pem
+  set -x SSL_CLIENT_CERT $HOME/.config/mtls/{{ .forge.slug }}-client.pem
 end
