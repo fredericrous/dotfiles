@@ -132,6 +132,7 @@ zsh_indicator = "zsh "
 powershell_indicator = ""
 format = "[$indicator](fg:#ad4007)"
 disabled = false
+
 [shlvl]
 symbol = " "
 style = "fg:black bg:#ad4007"
