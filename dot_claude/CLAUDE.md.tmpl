@@ -276,6 +276,18 @@ worktree/branch it was using before assuming the work is gone — a stalled
 agent often leaves a clean, compiling partial result worth resuming from
 rather than restarting.
 
+## Working method
+
+How a change travels — plan in the repo, one PR per repo per plan, a
+verification loop before every push, your approval of UI on localhost — is
+decided in the fleet corpus (ADR-0022/0023, rules `work.*`); `aval rule
+<id>` has the wording, and the `worktree-task` skill runs it. Two habits
+that are not a repository's business: before ExitPlanMode on a
+non-trivial plan, run a Plan subagent as a staff engineer backed by real
+numbers and fold its findings in; and when a decision is the person's,
+offer 2–4 meaningful options (recommendation first when justified), accept
+free-text corrections, and ask openly when options would be dishonest.
+
 ## Relais routing
 
 In a repo that has `relais.toml` and a trust grant (`relais doctor` is

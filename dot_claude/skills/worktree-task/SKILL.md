@@ -1,6 +1,6 @@
 ---
 name: worktree-task
-description: Create or tear down a per-task git worktree, isolated from the live checkout. Use at the start of substantive edit/commit work in any repo, and again when that work is done.
+description: Create or tear down a per-task git worktree, isolated from the live checkout — landing the approved plan as the first commit and running the verification loop (and, for UI, the localhost preview) before the single push. Use at the start of substantive edit/commit work in any repo, and again when that work is done.
 ---
 
 # worktree-task
@@ -29,19 +29,93 @@ git worktree add ../<repo>-wt-<slug> -b <branch-name> origin/main
 - After creating it, `cd` into the new worktree path for the rest of the task. Confirm you're on the right branch with `git branch --show-current` before editing.
 - Do NOT symlink `node_modules` or other deps into the worktree as a shortcut — it has broken dev-server file resolution before (see `application_landscape_e2e_debug_traps` project memory). Let the worktree install its own deps.
 
+### Land the plan (fleet ADR-0022, `work.plan-lives-in-the-repo`)
+
+The approved plan is the branch's FIRST commit, before any code.
+
+1. **Which plan.** The path this session's ExitPlanMode result gave. If this
+   session approved no plan, ask the person for the path. Never pick the
+   newest file in `~/.claude/plans/` — with parallel sessions, mtime is not
+   task identity.
+2. **Reuse before writing.** If `docs/plans/` already holds an `active` plan
+   for this work, continue it instead of adding a second one.
+3. **Write it** as `docs/plans/<approval-date>-<slug>.md` (slug: the H1,
+   kebab-case, ≤5 words), with front matter per
+   [plan-template.md](plan-template.md): `status: active`, `branch`, `repos`,
+   `adrs`. When this repo is not the plan's home (the repo owning its
+   decision), write a **pointer file** of the same name instead
+   (`canonical:`, `phases:`, `status:` for this slice).
+4. **Commit it alone:** `docs(plan): <slug>`.
+
+Skip all of this for a change describable in one sentence: it joins the
+open batch branch with no plan (`work.ceremony-scales-with-size`).
+
+**Duro stack, new screen or material UI choice** (`handoff.fresh-directions-trigger`):
+before implementing, run `/duro-mockup` for 2–4 directions (`duro mockup
+check` must pass), let the person pick through options, and commit the
+picked artboard on this branch. A fix that restores an existing design
+reuses the picked artboard.
+
 ## Finish
 
-Run from inside the worktree (or pass its path explicitly):
+Run from inside the worktree. The steps are labelled; every "return to"
+below names one of them.
 
-```bash
-git status                      # confirm everything you care about is committed
-git fetch origin -q
-git rebase origin/main          # origin/main may have advanced since the worktree was created
-git push -u origin <branch-name>
-```
+- **F1. Rebase.** `git fetch origin -q && git rebase origin/main`. Resolve
+  conflicts in place, never in the live checkout.
+- **F2. Verification loop** (`work.verification-loop-before-push`). Check
+  the changed behaviour observably, against the plan's Verification section:
+  - UI: Claude in Chrome on the local dev server — open the changed route,
+    exercise the interaction (click, type, mobile width), read console and
+    network, screenshot; on the Duro stack, beside the picked artboard
+    (`handoff.prove-fidelity`).
+  - Non-UI: a piloted run (`run` skill) — the CLI on a real input, the
+    service plus requests, an operator on kind, `kustomize build` /
+    `flux diff`. A focused test can be the check for a library, test-only
+    or docs change; a green general suite alone never is.
+  - Budget: one attempt plus at most 3 repairs of the same failure, then
+    stop and report without pushing. Missing credentials or infrastructure
+    is a blocker report, not a fix. Changes the person asks for do not
+    count against the budget.
+- **F3. Record.** In the plan: input → expected → actual per check, tick
+  the phases, append Decision log / Outcome. Set `status: done` only if
+  verification passed AND this PR implements the last phase. Offer to turn
+  a lasting decision into an ADR in this same PR
+  (`work.lasting-decisions-become-adrs`). Screenshots and raw output go
+  OUTSIDE the worktree (`~/.claude/amont-agent/attestations/<sha>/`).
+- **F4. Commit.** Where amont is installed this commit IS the project gate
+  (ADR-0009 runs the tests at pre-commit); only a repo without amont runs a
+  separate `make check` or equivalent here. Run `git status` first and
+  stage explicit paths.
+- **F5.** If the SHA to push differs from the verified tree in more than
+  the plan commit, return to F2.
+- **F6. Non-UI push.** `amont rehearse --wait` where amont is installed,
+  then `git push -u origin <branch>` bare, confirm with
+  `git ls-remote origin refs/heads/<branch>`, and open ONE pull request
+  whose body carries the verification record.
+- **F7. UI push** (the push carries files under `app/`, `src/`, `web/` or
+  `*.tsx|jsx|css|html` in a repo with a `dev` script — fleet ADR-0023):
+  1. Install from the lockfile, frozen (`npm ci`, `pnpm install
+     --frozen-lockfile`), so the tree stays clean; start the dev server on a
+     free port and keep it up until the person answers.
+  2. Show the URL, the verification record and, in a sentence or two, the
+     changed behaviour.
+  3. Run, as its own foreground command:
+     `amont-agent preview register --url <url> --attestation <file outside the worktree>`
+  4. In the SAME turn, ask ONE marked question with AskUserQuestion: text
+     containing `[preview <id>]` and every `repo@<7-char sha>` it covers;
+     options exactly `Approve`, `Request changes`, `Hold` — no
+     "(Recommended)" suffix, and never pre-fill `answers`.
+  5. On `Approve` (or the person typing `approve`/`ship`/`lgtm`/`looks
+     good` as the next prompt): push as in F6. On `Request changes`: apply
+     what the person describes, then return to F1. On no answer: wait,
+     server up.
+- **F8.** Any code change or rebase after F4 returns to F1.
 
-- If the rebase conflicts, resolve it in place — don't fall back to the live checkout to sort it out.
-- Only after the push succeeds, remove the worktree from the **primary** checkout (not from inside itself):
+No release unless the person asks for one (`work.release-on-request`).
+
+Only after the push succeeds, remove the worktree from the **primary**
+checkout (not from inside itself):
 
 ```bash
 cd <repo-root>
@@ -49,7 +123,7 @@ git worktree remove ../<repo>-wt-<slug>
 ```
 
 - If `git worktree remove` refuses because of untracked files, inspect them first (don't `--force` blindly — it may be legitimate leftover build output, but check).
-- This is a good moment to open the PR / follow the repo-ownership rule in CLAUDE.md (commit+push to main directly on owned repos unless the user asked for a PR).
+- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill.
 
 Then sweep any *other* worktree in this repo that became redundant while you were
 working — a merged PR elsewhere does not clean itself up:

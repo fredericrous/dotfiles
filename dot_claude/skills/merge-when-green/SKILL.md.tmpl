@@ -28,6 +28,13 @@ Standing rule (see `~/.claude/CLAUDE.md` § Repo ownership / PR workflow): **nev
    ```
    Loop until `status` is `completed` for all required checks. Use `until`/`sleep` in a single foreground command, or check back periodically — don't spin tightly.
 
+2b. **Check the plan, warn only.** If the PR adds or changes a file under
+   `docs/plans/`, read its front matter from the PR head: a plan still
+   `active` whose phases are all ticked, or `done` with phases unticked, is
+   worth one line to the person before merging. Never add a commit for it
+   here — a commit re-runs CI; the status belongs in the branch's last
+   commit (worktree-task F3).
+
 3. **Read the result BEFORE deciding to merge — as its own step, not chained into the merge command.** Never write something like `cat <poll-result>; gh pr merge ...` in one compound command — a background poller's stale/wrong output has previously caused a merge to fire on red checks because the merge ran unconditionally regardless of what the `cat` printed. Inspect the actual conclusion first, THEN issue the merge as a separate tool call.
 
 4. **If all required checks are `conclusion: success`:**
