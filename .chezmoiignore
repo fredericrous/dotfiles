@@ -1,6 +1,7 @@
 # repository machinery, not dotfiles — these must never be deployed to $HOME
 amont.conf
 scripts/
+docs/
 README.md
 install_*
 .gitattributes

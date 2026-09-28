@@ -23,7 +23,6 @@
       "mcp__chrome-devtools__list_network_requests"
     ]
   },
-  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -41,6 +40,29 @@
       },
       {
         "matcher": "Read|Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 19
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
@@ -78,11 +100,115 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Agent|Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
         "hooks": [
           {
             "type": "command",

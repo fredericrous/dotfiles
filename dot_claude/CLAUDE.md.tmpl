@@ -80,6 +80,15 @@ improvising them by hand.
   write the bare subject with no emoji; a prepare-commit-msg hook
   auto-prepends the gitmoji afterward, so a manually-added emoji prefix
   eats into the 50-char budget and can push you over.
+- **The amont-generated block in `AGENTS.md`/`CLAUDE.md` rides in the next
+  PR** — the fleet decision is `guidance.generated-block` (ADR-0018, rules
+  `guidance.*` in the pack); `aval rule guidance.generated-block-rides-the-change`
+  has the wording. What is specific to this machine: `amont.fix` is unset
+  here, so the `pre-commit-agents-md` check only WARNS — run `amont
+  agents-md` in the task worktree and stage the result into the same commit.
+  Never run `amont-fleet fix --apply --agents-md` against the live checkouts:
+  a dirty live checkout silently disables the pre-push pull-rebase, and
+  worktrees start from `origin/main` so they never see the edit.
 - **Omit the `Co-Authored-By: Claude` trailer on commits landing in a repo
   the user doesn't own** (upstream OSS, third-party forks being contributed
   back, external PRs) — maintainers can reject PRs advertising AI
@@ -266,6 +275,39 @@ non-trivial background agent, pass an explicit `model` override (e.g.
 worktree/branch it was using before assuming the work is gone — a stalled
 agent often leaves a clean, compiling partial result worth resuming from
 rather than restarting.
+
+## Working method
+
+How a change travels — plan in the repo, one PR per repo per plan, a
+verification loop before every push, your approval of UI on localhost — is
+decided in the fleet corpus (ADR-0022/0023, rules `work.*`); `aval rule
+<id>` has the wording, and the `worktree-task` skill runs it. Two habits
+that are not a repository's business: before ExitPlanMode on a
+non-trivial plan, run a Plan subagent as a staff engineer backed by real
+numbers and fold its findings in; and when a decision is the person's,
+offer 2–4 meaningful options (recommendation first when justified), accept
+free-text corrections, and ask openly when options would be dishonest.
+
+## Relais routing
+
+In a repo that has `relais.toml` and a trust grant (`relais doctor` is
+green there), route bounded implementation and inspection tasks through
+the `relais` skill without being asked: one objective, a write scope, and
+acceptance a command can verify. Keep design, multi-repo, ops and
+exploratory work in the parent session. Say in one line which path a task
+took and why; a repo without a policy gets ordinary work, stated as such.
+
+- Every relais command runs with the repo (or task worktree) root as cwd
+  (`cd <root> && relais …`); the session's own cwd is usually
+  `~/Developer/Perso`, which is not a repo. The CLI finds `relais.toml`
+  upward from any subdirectory, never from outside the repo.
+- `relais run` refuses a dirty tree and builds its candidate in its own
+  worktree from the base SHA, so commit (or finish) unrelated work first;
+  the worktree-isolation rule above still governs anything the parent
+  edits by hand.
+- A run's outcome, not a worker's completion message, is the acceptance.
+  `needs_decision` is the user's call unless the answer is already in the
+  request.
 
 ## Security
 
