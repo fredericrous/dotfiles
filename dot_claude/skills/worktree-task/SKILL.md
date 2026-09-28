@@ -93,23 +93,48 @@ below names one of them.
   then `git push -u origin <branch>` bare, confirm with
   `git ls-remote origin refs/heads/<branch>`, and open ONE pull request
   whose body carries the verification record.
-- **F7. UI push** (the push carries files under `app/`, `src/`, `web/` or
-  `*.tsx|jsx|css|html` in a repo with a `dev` script — fleet ADR-0023):
+- **F7. UI push** (the push carries interface changes in a repository with a
+  user interface; fleet ADR-0023, `work.preview-is-guided`). The person works
+  on several projects at once and will not remember where this one stood.
+  **Never ask for an approval without a guide.**
   1. Install from the lockfile, frozen (`npm ci`, `pnpm install
      --frozen-lockfile`), so the tree stays clean; start the dev server on a
      free port and keep it up until the person answers.
-  2. Show the URL, the verification record and, in a sentence or two, the
-     changed behaviour.
-  3. Run, as its own foreground command:
-     `amont-agent preview register --url <url> --attestation <file outside the worktree>`
-  4. In the SAME turn, ask ONE marked question with AskUserQuestion: text
-     containing `[preview <id>]` and every `repo@<7-char sha>` it covers;
-     options exactly `Approve`, `Request changes`, `Hold` — no
-     "(Recommended)" suffix, and never pre-fill `answers`.
-  5. On `Approve` (or the person typing `approve`/`ship`/`lgtm`/`looks
-     good` as the next prompt): push as in F6. On `Request changes`: apply
-     what the person describes, then return to F1. On no answer: wait,
-     server up.
+  2. **Screenshots.** Take `before.jpg` from `origin/main`'s build or from a
+     step taken earlier, and `after.jpg` from this commit, at the same route
+     and state. Put them in `~/.claude/amont-agent/attestations/<short-sha>/`,
+     outside the worktree.
+  3. **Write the guide** in that directory as `guide.md`, from
+     [preview-guide-template.md](preview-guide-template.md). Fill every
+     section:
+     - Where we are;
+     - What you should see;
+     - Try it: numbered steps, the exact URL, each click named by its visible
+       label and position, and after each step what should appear;
+     - Reference;
+     - Already checked.
+     Write it for someone who has not seen this session.
+  4. **Register it**, as its own foreground command (a leading
+     `cd <worktree> &&` is fine):
+     `amont-agent preview register --url <url> --guide <that guide.md> --open`
+     It refuses an incomplete guide. `--open` opens the rendered guide page
+     in the person's browser.
+  5. **Open the app for them** with Claude in Chrome: a tab at the URL,
+     already at the state step 1 of "Try it" reaches (for example the panel
+     already open). Say which tab it is.
+  6. **Print the brief in the terminal**: the guide's sections, short. Then,
+     in the SAME turn, ask ONE marked question with AskUserQuestion:
+     - its text begins with the project and the one-line change, then
+       `[preview <id>]` and every `repo@<7-char sha>` it covers;
+     - options exactly `Approve`, `Request changes`, `Hold`, with no
+       "(Recommended)" suffix;
+     - never pre-fill `answers`.
+  7. On `Approve` (or the person typing `approve`/`ship`/`lgtm`/`looks
+     good` as the next prompt), push as in F6. On `Request changes`, apply
+     what the person describes, then return to F1. On no answer, wait with
+     the server up.
+  - An approval given before the person had a guide is not informed. Hold
+    the push, give the guide, and ask again.
 - **F8.** Any code change or rebase after F4 returns to F1.
 
 No release unless the person asks for one (`work.release-on-request`).
