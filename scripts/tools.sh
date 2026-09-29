@@ -10,8 +10,8 @@
 set -eu
 
 cd "$(dirname "$0")/.."
-# A plain KEY=value file; shellcheck cannot follow it without -x (SC1091).
-# shellcheck disable=SC1091
+# A plain KEY=value file, not a script: shellcheck is told not to follow it.
+# shellcheck source=/dev/null
 . ./tools.env
 
 TOOLS=.tools
