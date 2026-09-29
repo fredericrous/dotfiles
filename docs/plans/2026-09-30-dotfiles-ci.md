@@ -16,6 +16,13 @@ adrs: [ADR-0017]
 
 📄 Full reviews: [2026-09-30-dotfiles-ci.reviews.md](2026-09-30-dotfiles-ci.reviews.md)
 
+## Implementation review
+
+Round 1 `approve-with-changes` (52k tokens, 78 s), Delta `approve-with-changes` (31k, 30 s), tree `19bd0a5e4c1d`.
+Fixed: an invalid regex in the terms file passed silently (grep exit 2 read as no match) — real, would have shipped; four workflow steps to match the targets; status lines and usage to stderr; usage exits 2; no `|| true` in lint's shebang read.
+Deliberate: lint's unreadable-file guard (`[ -r "$f" ]`) is the next change's, not a third pass; the checksum wording in Behaviour now matches the code (`digest` + compare, not `shasum -c`).
+Record-only items (phase ticks, this section) live under `docs/plans/`, outside the canonical tree, so the reviewed tree is the pushed tree.
+
 ## Context
 
 `fredericrous/dotfiles` is a public GitHub repository with an amont
@@ -78,8 +85,8 @@ repository has no language of its own.
     publishes no checksums file, so its three are computed at pin time
     from the asset downloaded over HTTPS from the GitHub release, and pin
     what was reviewed rather than what upstream attests. The Makefile
-    verifies every download with `shasum -a 256 -c` before extracting; a
-    mismatch fails naming the asset. An unknown host is a failure that
+    verifies every download — `shasum -a 256` (or `sha256sum`) compared to
+    the pinned digest — before extracting; a mismatch fails naming the asset. An unknown host is a failure that
     names the host, not a fallback to PATH.
   - Afterwards `.tools/chezmoi --version` and `.tools/shellcheck
     --version` must contain their pins, or the target fails.
@@ -171,9 +178,9 @@ repository has no language of its own.
 
 ## Phases
 
-- [ ] Phase 1 — this plan, `docs/plans/2026-09-30-dotfiles-ci.md`, the
+- [x] Phase 1 — this plan, `docs/plans/2026-09-30-dotfiles-ci.md`, the
   first commit.
-- [ ] Phase 2 — `tools.env` (versions and asset checksums), `Makefile`
+- [x] Phase 2 — `tools.env` (versions and asset checksums), `Makefile`
   (`tools`, `render`, `lint`, `private-refs`, `check`), `ci/chezmoi.toml`,
   `.gitignore`, `.chezmoiignore` entries, and the `--tree` mode of
   `scripts/check-private-refs.sh` (names only, `PRIVATE_REFS_REQUIRE_TERMS`).
@@ -237,6 +244,27 @@ repository has no language of its own.
 - `make render` with `run_once_fisher.fish.tmpl` broken on purpose (an
   unclosed `{{`) → fails naming that file (falsification), then restored.
 - `make check` → all four, green, wall time recorded.
+  - Phase 2 actuals (2026-09-30, this Mac, Intel): cold `make check` 15 s,
+    warm 9–10 s (pre-push keeps the full target, under 20 s); `make tools`
+    twice → second run "(present)" for both, no request; wrong version →
+    "tools: could not download …/v0.11.99/…"; one checksum digit → "tools:
+    checksum mismatch for shellcheck-v0.11.0.darwin.x86_64.tar.xz";
+    `git status --porcelain` after `make check` → only the intended files;
+    `chezmoi managed` → none of `Makefile`, `tools.env`, `ci`; broken
+    `run_once_fisher.fish.tmpl` → "render: … does not render"; broken
+    `dot_claude/CLAUDE.md.tmpl` → chezmoi names it ("unclosed action …
+    CLAUDE.md.tmpl:336"); an unquoted-loop script → 2 × SC2086, exit 1; a
+    README word as a term → exit 1 naming `README.md`, line not shown; the
+    real terms → 0 hits over 96 files (= tracked minus `encrypted_*`); no
+    terms file → "NOT checking", exit 0; `PRIVATE_REFS_REQUIRE_TERMS=1`
+    with no file, with a comments-only file, and with `[unclosed` → exit 1
+    each; a term only in the include line of the `Application Support`
+    settings template → that path named (the NUL-safe loop reaches it);
+    the term `code` → `<path withheld>` ×4, the path never printed.
+    shellcheck baseline on the tracked scripts before the fixes: 1 finding
+    in the three scripts the plan named, 20 more in the six git helpers
+    the shebang rule pulled in, all fixed (two were real bugs: literal
+    backslash-quotes to `git commit`, `${2:REMOVED}` for a default).
 - GitHub Actions: the PR's `check (ubuntu-latest)` and `check
   (macos-latest)` → both green; the run's step names are the target names;
   the downloaded run log contains no `NOT checking` line and no term from
