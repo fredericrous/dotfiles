@@ -104,8 +104,8 @@ engineer…" becomes:
 
 ## Phases
 
-- [ ] Phase 4a: the nine agent files; one commit.
-- [ ] Phase 4b: the `CLAUDE.md.tmpl` sentence and the `worktree-task`
+- [x] Phase 4a: the nine agent files; one commit.
+- [x] Phase 4b: the `CLAUDE.md.tmpl` sentence and the `worktree-task`
   landing step; one commit.
 - [ ] Phase 4c: apply, check live, then open the dotfiles PR carrying
   Phases 3 and 4.
@@ -138,5 +138,28 @@ engineer…" becomes:
 - **A machine comment moved off the last line:** landing refuses, and
   does not treat the plan as unreviewed.
 - **`chezmoi diff`** is empty after the PR's files are applied.
+
+### Actual (2026-09-29)
+
+- **The live gate:**
+  - the first ExitPlanMode of this plan, with no reviews → deny,
+    `missing for repos=dotfiles: backend`;
+  - after `/plan-review` → passed. The journal shows `denied` at
+    `c0e60fae` then `passed` at `ded8d951`, and `plan-panel` then reads
+    `current`.
+- **Review cost:** backend 35k + 30k + 27k tokens (92k in total), in
+  45 s + 36 s + 8 s of wall time.
+- **Applying:** 11 `plan-review-*` agents on disk, the unmanaged `relais-*`
+  agents kept, `chezmoi diff` empty.
+- **The website-builder panel:** 9 of 9 agent files exist.
+- **Agent types in this session:** the 9 new ones did not hot-load, so the
+  one UI role run live is deferred to a new session.
+- **The landing check:**
+  - the source hashes to `body-sha` (`ded8d9517523`) → the plan lands;
+  - a line added under Context → refused, `body=4c3d28aeff7b`;
+  - the comment moved off the last line → refused.
+- **The landed copy:** it first hashed to `b3afe3065c7c`, because of the
+  blank line after the front matter. Stripping the front matter and that
+  line gives `ded8d9517523`. The recipe in `worktree-task` now says so.
 
 <!-- panel: repos=dotfiles reviewers=backend body-sha=ded8d9517523 -->
