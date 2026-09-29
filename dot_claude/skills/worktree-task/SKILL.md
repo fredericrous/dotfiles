@@ -63,9 +63,9 @@ The approved plan is the branch's FIRST commit, before any code.
      sidecar, `docs/plans/<name>.reviews.md`. Link it from a
      `📄 Full reviews:` line inside `## Review panel`, which is outside
      the reviewed body.
-   - **Check the landed copy:** strip the front matter and the blank line
-     after it; the result must still hash to `body-sha`:
-     `awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' <landed> | sed '1{/^$/d}' | amont-agent plan-sha --short -`.
+   - **Check the landed copy:** `amont-agent plan-sha --short <landed>`
+     must still equal `body-sha`. Since 2.22.1, `plan-sha` skips front
+     matter.
 5. **Commit it alone** (with its sidecar): `docs(plan): <slug>`.
 
 Skip all of this for a change describable in one sentence: it joins the

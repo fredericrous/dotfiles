@@ -152,14 +152,22 @@ engineer…" becomes:
 - **Applying:** 11 `plan-review-*` agents on disk, the unmanaged `relais-*`
   agents kept, `chezmoi diff` empty.
 - **The website-builder panel:** 9 of 9 agent files exist.
-- **Agent types in this session:** the 9 new ones did not hot-load, so the
-  one UI role run live is deferred to a new session.
+- **Agent types in this session:** the 9 new ones did not hot-load at
+  first; they appeared later in the same session.
+- **One UI role live:** `plan-review-ux-research` on this plan →
+  approve-with-changes, 7 findings, each cited (Altmann & Trafton; Parnin
+  & Rugaber, CHI 2010; NN/g ×4; Anderson et al., CHI 2015) or marked
+  unbacked; 35k tokens, 38 s. Its suggestions (📍 carrying "next: <one
+  action>", a specified progress-line format, ≤20 words per line) go to
+  the person, not into this approved plan.
 - **The landing check:**
   - the source hashes to `body-sha` (`ded8d9517523`) → the plan lands;
   - a line added under Context → refused, `body=4c3d28aeff7b`;
   - the comment moved off the last line → refused.
 - **The landed copy:** it first hashed to `b3afe3065c7c`, because of the
   blank line after the front matter. Stripping the front matter and that
-  line gives `ded8d9517523`. The recipe in `worktree-task` now says so.
+  line gives `ded8d9517523`. amont-agent 2.22.1 makes `plan-sha` skip
+  front matter, so the landed file as committed hashes to `ded8d9517523`
+  directly, and `worktree-task` checks it that way.
 
 <!-- panel: repos=dotfiles reviewers=backend body-sha=ded8d9517523 -->
