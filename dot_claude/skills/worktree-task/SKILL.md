@@ -89,7 +89,11 @@ below names one of them.
   - UI: Claude in Chrome on the local dev server — open the changed route,
     exercise the interaction (click, type, mobile width), read console and
     network, screenshot; on the Duro stack, beside the picked artboard
-    (`handoff.prove-fidelity`).
+    (`handoff.prove-fidelity`). Put the two side by side and list every
+    difference BEFORE the guide: fix each, or name it
+    `deliberate: <reason>`. When accessibility seems to need a design
+    change, look first for a fix that keeps the design (an `sr-only`
+    copy, aria, a live region outside the control).
   - Non-UI: a piloted run (`run` skill) — the CLI on a real input, the
     service plus requests, an operator on kind, `kustomize build` /
     `flux diff`. A focused test can be the check for a library, test-only
@@ -136,10 +140,14 @@ below names one of them.
      - Already checked.
      Write it for someone who has not seen this session.
   4. **Register it**, as its own foreground command (a leading
-     `cd <worktree> &&` is fine):
+     `cd <worktree> &&` is fine; copying images next to the guide is a
+     separate command before it, never chained):
      `amont-agent preview register --url <url> --guide <that guide.md> --open`
      It refuses an incomplete guide. `--open` opens the rendered guide page
      in the person's browser.
+     Its JSON prints `label` (and `aliases`): the question in step 6 names
+     one of them, or the answer approves nothing. A register that did not
+     bind says so right after it runs; run the command it prints.
   5. **Open the app for them** with Claude in Chrome: a tab at the URL,
      already at the state step 1 of "Try it" reaches (for example the panel
      already open). Say which tab it is.
