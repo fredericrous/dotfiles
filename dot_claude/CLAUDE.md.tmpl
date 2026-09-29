@@ -282,9 +282,10 @@ How a change travels — plan in the repo, one PR per repo per plan, a
 verification loop before every push, your approval of UI on localhost — is
 decided in the fleet corpus (ADR-0022/0023, rules `work.*`); `aval rule
 <id>` has the wording, and the `worktree-task` skill runs it. Two habits
-that are not a repository's business: before ExitPlanMode on a
-non-trivial plan, run a Plan subagent as a staff engineer backed by real
-numbers and fold its findings in; and when a decision is the person's,
+that are not a repository's business: before ExitPlanMode, run
+`/plan-review`: it puts the plan through the review panel its
+repositories call for (`work.plan-review-panel`), and the amont-agent hook
+refuses a plan without it; and when a decision is the person's,
 offer 2–4 meaningful options (recommendation first when justified), accept
 free-text corrections, and ask openly when options would be dishonest.
 
