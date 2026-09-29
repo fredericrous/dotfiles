@@ -5,6 +5,9 @@ docs/
 README.md
 install_*
 .gitattributes
+Makefile
+tools.env
+ci/
 {{ if ne .chezmoi.os "windows" }}
 AppData/
 Documents/WindowsPowerShell/Profile.ps1
