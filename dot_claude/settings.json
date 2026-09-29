@@ -73,6 +73,19 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [

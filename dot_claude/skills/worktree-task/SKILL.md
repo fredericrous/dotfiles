@@ -45,7 +45,28 @@ The approved plan is the branch's FIRST commit, before any code.
    `adrs`. When this repo is not the plan's home (the repo owning its
    decision), write a **pointer file** of the same name instead
    (`canonical:`, `phases:`, `status:` for this slice).
-4. **Commit it alone:** `docs(plan): <slug>`.
+4. **Check its review** (`work.plan-review-panel`), before writing it:
+   - **No `## Review panel` heading** (a plan from before amont-agent
+     2.22.0, or one the person had skipped): land it as it is, with a
+     one-line note in its Decision log.
+   - **The section is there:** the last line must be the machine comment
+     with a `body-sha`. If it is not, refuse; never treat the plan as
+     unreviewed.
+   - **Compare the sha:** run `amont-agent plan-sha --short <source>` on
+     the approved source file in `~/.claude/plans/` (the file the hook
+     judged). Never run it on the landed copy, whose front matter
+     `plan-sha` does not strip. It must equal `body-sha`.
+   - **On a mismatch** (the body changed after its review), do not land.
+     Either re-run `/plan-review` as a delta and land once it passes, or
+     the person accepts it unreviewed, recorded in one Decision-log line.
+   - **Where the reviews go:** move `## Full reviews (reference)` into a
+     sidecar, `docs/plans/<name>.reviews.md`. Link it from a
+     `📄 Full reviews:` line inside `## Review panel`, which is outside
+     the reviewed body.
+   - **Check the landed copy:** `amont-agent plan-sha --short <landed>`
+     must still equal `body-sha`. Since 2.22.1, `plan-sha` skips front
+     matter.
+5. **Commit it alone** (with its sidecar): `docs(plan): <slug>`.
 
 Skip all of this for a change describable in one sentence: it joins the
 open batch branch with no plan (`work.ceremony-scales-with-size`).
