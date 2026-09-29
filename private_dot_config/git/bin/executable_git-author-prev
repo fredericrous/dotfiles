@@ -3,8 +3,8 @@
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
 if [ "$#" -ne 2 ]; then
-    echo -e "Usage:\n    git $SCRIPT_NAME \$name \$email";
+    printf 'Usage:\n    git %s <name> <email>\n' "$SCRIPT_NAME"
     exit 1;
 fi
 
-git commit --amend --author \"$1 <$2>\" -C HEAD
+git commit --amend --author "$1 <$2>" -C HEAD

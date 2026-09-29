@@ -11,7 +11,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 # create user qaunix
-useradd -g sysadmin -d /home/qaunix -m -p $(echo qaunix | openssl passwd -1 -stdin) -s /bin/bash qaunix
+useradd -g sysadmin -d /home/qaunix -m -p "$(echo qaunix | openssl passwd -1 -stdin)" -s /bin/bash qaunix
 
 # set dns
 echo "search mydns.test" >> /etc/resolvconf/resolv.conf.d/base

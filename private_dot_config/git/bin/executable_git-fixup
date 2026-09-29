@@ -3,13 +3,11 @@
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
 if [ "$#" -eq 0 ]; then
-    printf "Usage:\n    git $SCRIPT_NAME \$sha\n";
+    printf 'Usage:\n    git %s <sha>\n' "$SCRIPT_NAME"
     exit 1;
 fi
 
 SHA=$(git rev-parse "$1")
-git commit --fixup=$SHA ${@:2}
-if [ $? -ne 0 ]; then
-    EDITOR=true
-    git rebase -i --autostash --autosquash $SHA^
+if ! git commit --fixup="$SHA" "${@:2}"; then
+    EDITOR=true git rebase -i --autostash --autosquash "$SHA^"
 fi

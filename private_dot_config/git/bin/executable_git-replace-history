@@ -3,8 +3,8 @@
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
 if [ "$#" -eq 0 ] || [ "$#" -gt 2 ]; then
-    printf "Usage:\n    git $SCRIPT_NAME \$old_text [\$new_text:REMOVED]\n";
+    printf 'Usage:\n    git %s <old_text> [<new_text>, default REMOVED]\n' "$SCRIPT_NAME"
     exit 1;
 fi
 
-git filter-repo --force --replace-text <(echo "$1==>${2:REMOVED}")
+git filter-repo --force --replace-text <(echo "$1==>${2:-REMOVED}")
