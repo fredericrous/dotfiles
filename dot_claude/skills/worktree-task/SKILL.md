@@ -27,7 +27,56 @@ git worktree add ../<repo>-wt-<slug> -b <branch-name> origin/main
 
 - Pick `<branch-name>` following this repo's existing convention (check recent branch names via `git branch -a` / `git log --all --oneline -20` if unsure — e.g. `feat/…`, `fix/…`).
 - After creating it, `cd` into the new worktree path for the rest of the task. Confirm you're on the right branch with `git branch --show-current` before editing.
-- Do NOT symlink `node_modules` or other deps into the worktree as a shortcut — it has broken dev-server file resolution before (see `application_landscape_e2e_debug_traps` project memory). Let the worktree install its own deps.
+- Do NOT symlink `node_modules` or other deps into the worktree as a shortcut — it has broken dev-server file resolution before (see `application_landscape_e2e_debug_traps` project memory). Let the worktree install its own deps — the next step does it.
+
+### Bootstrap dependencies (before the first commit)
+
+A fresh worktree has no `node_modules`, `.venv` or build cache. The plan
+commit below is the FIRST commit, and where amont is installed that commit
+runs the project's tests at pre-commit — so without this step the very first
+gate fails with "command not found" and the session stops to install.
+Bootstrap once here, from the worktree root, frozen to the lockfile so the
+tree stays clean:
+
+| Present at the root | Run |
+| --- | --- |
+| `relais.toml` with a `[[verification.profiles.*.setup]]` | that `argv`, first — it is the declared bootstrap |
+| `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` |
+| `package-lock.json` | `npm ci` |
+| `yarn.lock` | `yarn install --immutable` (Yarn 1: `--frozen-lockfile`) |
+| `uv.lock` | `uv sync --frozen` |
+| `go.mod` | `go mod download` (respects the repo's `GOTOOLCHAIN` pin) |
+| `Cargo.lock` | `cargo fetch` (`rustup run <pin>` when the repo pins a channel) |
+
+- A monorepo installs from the root only, never per package.
+- Run it bare and read the exit status; never pipe it through `tail`.
+- `git status --short` afterwards must be empty. A lockfile that changed
+  means the wrong installer or version — undo it, do not commit it.
+- Gitignored inputs the gate needs (an `.env` for Playwright, a local
+  certificate) are copied from the live checkout only when the gate names
+  them; never copy them speculatively.
+- An installer that fails is a blocker report before any edit, not
+  something to work around inside the task.
+
+### Refresh the fleet pack (when the repository vendors one)
+
+A repository that vendors the decisions pack (`.adr/packs/decisions.pack`
+in its `.adr.yaml`) resolves fleet rules from that copy, and nothing tells
+it when a decision changes: on 2026-09-29 every consumer was weeks behind
+and none knew the `work.*` rules. The refresh rides this branch
+(`guidance.generated-block-rides-the-change`), never a fleet sweep:
+
+```bash
+aval add --check --quiet --budget 20; rc=$?
+```
+
+Branch on `rc` (zsh: `status` is read-only, never use it as a name):
+
+- `1` (behind, or edited): `aval add github:fredericrous/decisions`, read
+  the diff, `aval heads --write` where the repository has its own corpus,
+  and commit `chore(adr): refresh the fleet pack` — before the plan commit;
+- `0` (current, or unknown because GitHub was unreachable): continue;
+- `2` or `3`: one line to the person, never a blocker.
 
 ### Land the plan (fleet ADR-0022, `work.plan-lives-in-the-repo`)
 
@@ -112,6 +161,48 @@ below names one of them.
   (ADR-0009 runs the tests at pre-commit); only a repo without amont runs a
   separate `make check` or equivalent here. Run `git status` first and
   stage explicit paths.
+- **F4b. Implementation review** (`work.implementation-review`; skipped
+  when the branch carries no plan). One independent reviewer reads the
+  diff against the plan and the active rules. The amont-agent
+  `implementation-review` hook checks at the push that it happened for
+  the tree being pushed, so run it after F4, on the committed tree:
+  1. Post `📍 <project>: implementation review, round 1, about 2 min.`
+  2. Get the block: `amont-agent tree-sha --block` (the canonical tree,
+     `HEAD` without `docs/plans/`; a worktree named after its task still
+     says the repository's name). Build the brief once:
+     - the landed plan's path, and its Verification section verbatim;
+     - `git diff origin/main...HEAD --stat -- . ':!docs/plans'`, and the
+       full diff when it is under 60 KB; above that, the stat and "Read
+       the files";
+     - the active constraints: `aval rules --level constraint`, run in
+       the worktree (the pack refreshed at Start);
+     - the plan's Non-goals.
+  3. Launch the `implementation-review` agent once, in the foreground,
+     with, in order: the block line verbatim; `Round 1.`; the brief;
+     "Read the plan and the diff. Open at most 10 more files or 1,500
+     lines. Follow your output contract." A background launch counts only
+     after its completion notification.
+  4. Post `returned: <verdict> (<tokens>, <seconds>)`.
+  5. Record it in the plan under `## Implementation review`, at most 5
+     lines of about 20 words, verdict first: the verdict; findings fixed;
+     findings kept as `deliberate: <reason>`; tokens and seconds. Commit
+     `docs(plan): implementation review`. The canonical tree does not
+     change, so the review stays bound.
+  6. `approve`, or `approve-with-changes` with every finding fixed or
+     named deliberate: continue to F5. A fix that changes code returns to
+     F1, and the **second** pass through F4b is the `Delta`: a fresh block
+     for the new tree, `Delta.`, the round-1 findings, the diff since,
+     "answer resolved / not resolved / new blocker for each". There is no
+     third pass: a `rework` that survives the Delta goes to the person with
+     a **marked** AskUserQuestion — its text starts with
+     `[implementation-review <repo>@<sha64>]` (the full id from
+     `tree-sha`), its options are exactly `Overrule`, `Fix`, `Hold`, with
+     both positions stated and `answers` never pre-filled. `Overrule` is
+     recorded by the hook itself and in the plan as `deliberate:
+     overruled — <reason>`; `Fix` returns to F1 and the next F4b is a
+     fresh round 1; `Hold` stops without pushing.
+  - Never write under `~/.claude/amont-agent/implementation-review/`: the
+    hook alone writes a pass file, and refuses a Write, Edit or Bash there.
 - **F5.** If the SHA to push differs from the verified tree in more than
   the plan commit, return to F2.
 - **F6. Non-UI push.** `amont rehearse --wait` where amont is installed,
@@ -122,9 +213,9 @@ below names one of them.
   user interface; fleet ADR-0023, `work.preview-is-guided`). The person works
   on several projects at once and will not remember where this one stood.
   **Never ask for an approval without a guide.**
-  1. Install from the lockfile, frozen (`npm ci`, `pnpm install
-     --frozen-lockfile`), so the tree stays clean; start the dev server on a
-     free port and keep it up until the person answers.
+  1. Dependencies are already there from the Start bootstrap; re-run that
+     step only if the rebase in F1 changed the lockfile. Start the dev
+     server on a free port and keep it up until the person answers.
   2. **Screenshots.** Take `before.jpg` from `origin/main`'s build or from a
      step taken earlier, and `after.jpg` from this commit, at the same route
      and state. Put them in `~/.claude/amont-agent/attestations/<short-sha>/`,
@@ -203,3 +294,5 @@ Confirm with the user before this mode if the worktree has any uncommitted work 
 ## Never
 
 Don't use `git stash` inside a worktree to move work between it and another checkout — `refs/stash` is shared across all worktrees of a repo. See the "Git stash policy (worktrees)" section of `~/.claude/CLAUDE.md` and use `gwt-stash-save`/`gwt-stash-pop` if a stash is genuinely needed.
+
+Don't restore a mutated file with `git checkout -- <file>` while the tree holds uncommitted work: it reverts to the last commit and takes every unstaged edit with it. Copy the file aside and copy it back.
