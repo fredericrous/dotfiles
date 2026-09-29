@@ -84,8 +84,10 @@ go, about 40–80k per reviewer.
    - the shared brief;
    - "Read the plan at the block's path. Open at most 10 more files or
      1,500 lines. Follow your output contract."
-4. As each one returns, post one line:
-   `rust ✓ approve-with-changes (2/4)`.
+4. As each one returns, post one line, so that a round longer than 10 s
+   shows what is done and what is left:
+   `k/N returned: <role> <verdict> (<tokens>, <seconds>)`, for example
+   `2/4 returned: lang:rust approve-with-changes (35k, 45 s)`.
 
 A launch that fails is relaunched once. If it fails again, it becomes a 👉
 decision for the person, and is never silently dropped.
@@ -105,6 +107,7 @@ the hook requires it: every edit to the body after backend's review makes
 backend stale.
 
 1. Post: `📍 <project>: round 2, re-running <names>, about 2 min.`
+   Returns use the same `k/N returned:` line.
 2. Get fresh blocks. The sha changed with the edits.
 3. Each prompt carries:
    - the block;
@@ -125,15 +128,23 @@ positions stated. It never becomes another round.
 
 Writing these never changes the body's sha, so the reviews stay bound.
 
-- **The `## Review panel` section**, under the H1, at most 5 lines:
+- **The `## Review panel` section**, under the H1, at most 5 lines of
+  **about 20 words each**. The person reads it after being away, working
+  on several projects, so it leads with the decision and says what comes
+  next:
   1. `⚠ unreviewed: <why>`, only when the person asked to skip the panel;
   2. `👉 **Decide:** <what the person must decide>`, or
      `none — approve if <the one-line bet>`;
-  3. `📍 <repositories>. Panel: <roles>.`;
+  3. `📍 <repositories> · <where the work stands> · next: <one action>. Panel: <roles>.`,
+     for example
+     `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend.`;
   4. `**Changed by review:**` up to 3 items;
-  5. `**Verdicts:**` the counts, and any delta rework that went to the person.
+  5. `**Verdicts:**` the counts per verdict, and any delta rework that went
+     to the person. Token counts and timings go in the full reviews, not
+     here.
 - **`## Full reviews (reference)`** as the last heading: each reviewer's
-  verdict and findings, as a plain section with no `<details>`.
+  verdict, findings, tokens and wall time, as a plain section with no
+  `<details>`.
 - **The machine comment** as the last line:
   `<!-- panel: repos=… adds=… reviewers=<roles> body-sha=<plan-sha --short> -->`.
 
@@ -160,8 +171,15 @@ After ExitPlanMode is rejected with feedback:
 The refusal names what is missing (`missing for repos=X: <roles>`) or stale
 (`stale (reviewed an older body)`). Run exactly those, then present again.
 After 2 refusals of the same plan, the hook hands the decision to the person
-with `UNREVIEWED: refused N×`. Do not try to get past it. Tell the person
-what is missing and why.
+with `UNREVIEWED: refused N×`, naming the missing reviewers and the body
+each time, so a repeated prompt still says something new. Do not try to
+get past it. Tell the person what is missing and why.
+
+A warning seen again and again stops being read, so the prompt must stay
+rare. The hook cannot see how the person answers; the number it can give
+is how often it asked. Before the panel's usefulness is decided, count
+them:
+`grep -c 'plan-review-panel deny asked' ~/.claude/amont-agent/journal.log`.
 
 ## Skipping
 
