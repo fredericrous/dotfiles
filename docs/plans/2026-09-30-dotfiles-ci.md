@@ -1,5 +1,5 @@
 ---
-status: active
+status: done
 branch: feat/ci
 repos: [dotfiles]
 adrs: [ADR-0017]
@@ -196,11 +196,10 @@ repository has no language of its own.
   (stdin, never argv), otherwise the first same-repository run fails by
   design. Then F4b (the first real implementation review), push, both
   runners green, merge.
-- [ ] Phase 4 — record the F4b cycle (tokens, seconds, verdict, whether
+- [x] Phase 4 — record the F4b cycle (tokens, seconds, verdict, whether
   each finding was real) in the implementation-review plan's Verification,
-  in decisions, as its Phase 4; set that plan's Phase 4 ticked. (Opened
-  right after this PR merges; this plan's tick rides the next dotfiles
-  change.)
+  in decisions, as its Phase 4; set that plan's Phase 4 ticked. → decisions#33
+  (merged 2026-09-30, c5ff2d3).
 
 ## Decision log
 
@@ -297,6 +296,15 @@ repository has no language of its own.
 
 ## Outcome
 
-(filled when the plan closes)
+Shipped 2026-09-30 in dotfiles#14: `make check` (pinned tools, hermetic
+render, shellcheck, tree-wide private-refs) mirrored by GitHub Actions on
+Linux and macOS, green on both; the repository's first CI, and the first
+live implementation-review cycle, which caught one real defect (a
+malformed regex passing the private-refs check silently) before the push.
+Surprises: the shebang rule pulled six git helper scripts into lint and
+found two real bugs in them; the shell lexer strips an unquoted Windows
+path's backslashes (not this repository's concern, but the same evening's
+amont-agent lesson); the reviewer's Bash guard refused a read of its own
+pass files (amont-agent#61). Nothing left open here.
 
 <!-- panel: repos=dotfiles adds=ops reviewers=backend,platform body-sha=f5d3133cd045 -->
