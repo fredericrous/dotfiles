@@ -6,7 +6,7 @@
 .POSIX:
 
 check: tools render lint private-refs
-	@echo "  ok   tools render lint private-refs"
+	@echo "  ok   tools render lint private-refs" >&2
 
 # Pinned tools into .tools/ (tools.env); never the machine's.
 tools:

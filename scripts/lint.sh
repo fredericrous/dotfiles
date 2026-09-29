@@ -24,14 +24,14 @@ while IFS= read -r f; do
     *.sh) ;;
     *)
       # The first 64 bytes, NUL stripped: a tracked binary is not a script.
-      first=$(LC_ALL=C head -c 64 "$f" 2>/dev/null | tr -d '\0' | head -n 1 || true)
+      first=$(LC_ALL=C head -c 64 "$f" | tr -d '\0' | head -n 1)
       case "$first" in
         '#!'*/sh|'#!'*/bash|'#!'*' sh'|'#!'*' bash'|'#!'*/sh' '*|'#!'*/bash' '*|'#!'*' sh '*|'#!'*' bash '*) ;;
         *) continue ;;
       esac ;;
   esac
   n=$((n + 1))
-  echo "  lint   $f"
+  echo "  lint   $f" >&2
   list="$list
 $f"
 done < "$tmp"
@@ -46,4 +46,4 @@ printf '%s\n' "$list" | sed '/^$/d' | while IFS= read -r f; do
   printf '%s\0' "$f"
 done | xargs -0 "$SHELLCHECK" --external-sources
 
-echo "  lint   ok ($n scripts of $total tracked files)"
+echo "  lint   ok ($n scripts of $total tracked files)" >&2

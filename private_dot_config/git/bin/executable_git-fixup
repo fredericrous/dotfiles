@@ -3,8 +3,8 @@
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
 if [ "$#" -eq 0 ]; then
-    printf 'Usage:\n    git %s <sha>\n' "$SCRIPT_NAME"
-    exit 1;
+    printf 'Usage:\n    git %s <sha>\n' "$SCRIPT_NAME" >&2
+    exit 2
 fi
 
 SHA=$(git rev-parse "$1")

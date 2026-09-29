@@ -65,13 +65,13 @@ expect() {
     "$TOOLS/$1" --version >&2 || true
     exit 1
   fi
-  echo "  tools  $1 $2"
+  echo "  tools  $1 $2" >&2
 }
 
 # chezmoi: chezmoi_<ver>_<os>_<arch>.tar.gz, binary at the archive root.
 ver=${CHEZMOI#v}
 if have chezmoi "$CHEZMOI"; then
-  echo "  tools  chezmoi $CHEZMOI (present)"
+  echo "  tools  chezmoi $CHEZMOI (present)" >&2
 else
   sum=$(eval "printf '%s' \"\${CHEZMOI_SHA256_$chezmoi_asset}\"")
   tarball="$DL/chezmoi_${ver}_${chezmoi_asset}.tar.gz"
@@ -82,7 +82,7 @@ fi
 
 # ShellCheck ships shellcheck-<tag>.<os>.<arch>.tar.xz, binary under shellcheck-<tag>/.
 if have shellcheck "${SHELLCHECK#v}"; then
-  echo "  tools  shellcheck $SHELLCHECK (present)"
+  echo "  tools  shellcheck $SHELLCHECK (present)" >&2
 else
   key=$(printf '%s' "$shellcheck_asset" | tr . _)
   sum=$(eval "printf '%s' \"\${SHELLCHECK_SHA256_$key}\"")

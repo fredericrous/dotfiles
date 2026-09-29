@@ -4,8 +4,8 @@
 SCRIPT_NAME=$(basename "$0" | sed 's/git-//')
 
 if [ "$#" -ne 1 ]; then
-    printf 'Usage:\n    git %s <name>\n' "$SCRIPT_NAME"
-    exit 1;
+    printf 'Usage:\n    git %s <name>\n' "$SCRIPT_NAME" >&2
+    exit 2
 fi
 set -e -o pipefail
 

@@ -46,7 +46,7 @@ git ls-files -z -- '*run_once_*.tmpl' | tr '\0' '\n' > "$dst/run_once.list"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   n=$((n + 1))
-  echo "  render $f"
+  echo "  render $f" >&2
   if ! run execute-template < "$f" > /dev/null; then
     echo "render: $f does not render" >&2
     exit 1
@@ -66,4 +66,4 @@ if ! run execute-template --init --promptString "bitwarden server url=x" < .chez
   exit 1
 fi
 
-echo "  render ok ($n run_once templates, config template, home applied to a temp dir)"
+echo "  render ok ($n run_once templates, config template, home applied to a temp dir)" >&2

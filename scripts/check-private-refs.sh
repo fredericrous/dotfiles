@@ -61,6 +61,15 @@ if [ -z "$PATTERN" ]; then
   fi
   exit 0
 fi
+# A term list that is not a valid extended regex would make every grep below
+# exit 2, which `if` reads as "no match": a silent pass. Refuse it instead,
+# naming the file and never the terms.
+if printf '' | grep -qiE "$PATTERN"; then :; else
+  if [ $? -gt 1 ]; then
+    echo "private-refs: the term list at $TERMS_FILE is not a valid extended regex — failing." >&2
+    exit 1
+  fi
+fi
 
 # The files to scan, one per line, spaces intact (no tracked path holds a
 # newline). NUL from git, because a tracked path here contains a space and
@@ -95,7 +104,7 @@ $f"
 done < "$files"
 
 if [ -z "$found" ]; then
-  [ "$mode" = tree ] && echo "  private-refs ok ($scanned plaintext files scanned)"
+  [ "$mode" = tree ] && echo "  private-refs ok ($scanned plaintext files scanned)" >&2
   exit 0
 fi
 

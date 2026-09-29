@@ -1,6 +1,6 @@
 # The same check a workstation runs (`make check`), on the two operating
 # systems the templates branch on (ADR-0017, ci.mirrors-the-local-check).
-# A red step here is a Makefile target to run at home.
+# A red step here is the Makefile target to run at home.
 name: CI
 
 on:
@@ -48,5 +48,13 @@ jobs:
             echo "PRIVATE_REFS_REQUIRE_TERMS=1" >> "$GITHUB_ENV"
           fi
 
-      - name: make check
-        run: make check
+      # The four targets `make check` runs, one step each, so a red step is
+      # the target to run at home.
+      - name: make tools
+        run: make tools
+      - name: make render
+        run: make render
+      - name: make lint
+        run: make lint
+      - name: make private-refs
+        run: make private-refs
