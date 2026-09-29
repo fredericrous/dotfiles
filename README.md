@@ -1,6 +1,18 @@
 # Dotfiles
 
+[![CI](https://github.com/fredericrous/dotfiles/actions/workflows/ci.yaml/badge.svg)](https://github.com/fredericrous/dotfiles/actions/workflows/ci.yaml)
+
 personal environment files
+
+## Checks
+
+`make check` is what CI runs, with the same commands and the same pinned
+tools (`tools.env`, installed into `.tools/`): every template renders
+against placeholder data, the shell scripts pass shellcheck, and no tracked
+plaintext file names private infrastructure. The private terms live outside
+the tree (`~/.config/chezmoi/private-terms`) and, for CI, in the
+`PRIVATE_TERMS` repository secret — a copy: whoever edits the file re-sets
+the secret with `gh secret set PRIVATE_TERMS < ~/.config/chezmoi/private-terms`.
 
 ## Requirements
 

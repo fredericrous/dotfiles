@@ -1,0 +1,52 @@
+# The same check a workstation runs (`make check`), on the two operating
+# systems the templates branch on (ADR-0017, ci.mirrors-the-local-check).
+# A red step here is a Makefile target to run at home.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The default token in a public repository may carry write; nothing here
+# needs more than a read.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      # Pinned by commit, the tag in the comment (toolchain.tools-pinned-with-it).
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v7.0.1
+
+      # The private terms, from the repository secret, into a file outside the
+      # workspace. Through `env:`, never in the script text. Required wherever
+      # the secret should exist — a push, or a pull request from this
+      # repository; a fork's pull request has no secret and the check says
+      # so loudly and passes, as on a machine not set up yet.
+      - name: private terms
+        env:
+          PRIVATE_TERMS: ${{ secrets.PRIVATE_TERMS }}
+          FROM_THIS_REPOSITORY: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+        run: |
+          if [ -n "$PRIVATE_TERMS" ]; then
+            printf '%s\n' "$PRIVATE_TERMS" > "$RUNNER_TEMP/private-terms"
+            echo "PRIVATE_TERMS_FILE=$RUNNER_TEMP/private-terms" >> "$GITHUB_ENV"
+          fi
+          if [ "$FROM_THIS_REPOSITORY" = "true" ]; then
+            echo "PRIVATE_REFS_REQUIRE_TERMS=1" >> "$GITHUB_ENV"
+          fi
+
+      - name: make check
+        run: make check
