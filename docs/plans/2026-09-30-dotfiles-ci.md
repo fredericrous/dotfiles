@@ -190,7 +190,7 @@ repository has no language of its own.
   `--tree` hit count (file names) against the real terms file — a hit
   already in the tree is fixed in this phase, since `--tree` fails on it
   where the staged mode never did.
-- [ ] Phase 3 — `.github/workflows/ci.yaml`, the `amont.conf` pre-push
+- [x] Phase 3 — `.github/workflows/ci.yaml`, the `amont.conf` pre-push
   entry, the README line. **Before the push**: `gh secret set
   PRIVATE_TERMS --repo fredericrous/dotfiles < ~/.config/chezmoi/private-terms`
   (stdin, never argv), otherwise the first same-repository run fails by
@@ -198,7 +198,9 @@ repository has no language of its own.
   runners green, merge.
 - [ ] Phase 4 — record the F4b cycle (tokens, seconds, verdict, whether
   each finding was real) in the implementation-review plan's Verification,
-  in decisions, as its Phase 4; set that plan's Phase 4 ticked.
+  in decisions, as its Phase 4; set that plan's Phase 4 ticked. (Opened
+  right after this PR merges; this plan's tick rides the next dotfiles
+  change.)
 
 ## Decision log
 
@@ -269,6 +271,12 @@ repository has no language of its own.
   (macos-latest)` → both green; the run's step names are the target names;
   the downloaded run log contains no `NOT checking` line and no term from
   the secret.
+  - dotfiles#14, run 36642805700 (2026-09-30): ubuntu 6 s, macos 12 s, both
+    `success`; steps `make tools`, `make render`, `make lint`, `make
+    private-refs`; the log holds 0 `NOT checking` lines, 0 matches of any
+    term, `private-refs ok (96 plaintext files scanned)` on both runners,
+    both tools reporting their pins on both. The `PRIVATE_TERMS` secret was
+    set before the push with `gh secret set … < file`.
 - A deliberate hit on a throwaway branch (a placeholder term added to the
   secret's file locally, `--tree` run with it) → exit 1 naming the file
   and NOT printing the term.
@@ -279,6 +287,13 @@ repository has no language of its own.
   fixed or `deliberate:`; the push → silent, journal `unconfirmed reviewed`
   (the hook's live `reviewed` case, still unverified). Tokens and seconds
   recorded here and in the implementation-review plan.
+  - 2026-09-30: block `repo=chezmoi sha=19bd0a5e…`; round 1
+    approve-with-changes (52k, 78 s, 6 findings, 1 real bug: the invalid
+    regex); Delta approve-with-changes (31k, 30 s); the push of this branch
+    → the hook silent, one journal line `implementation-review unconfirmed
+    reviewed`, pass file `by-tree/chezmoi/19bd0a5e….json` written by the
+    hook. Found on the hook itself: its Bash guard refused a read-only `ls`
+    of the pass files (amont-agent#61).
 
 ## Outcome
 
