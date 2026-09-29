@@ -288,6 +288,10 @@ repositories call for (`work.plan-review-panel`), and the amont-agent hook
 refuses a plan without it; and when a decision is the person's,
 offer 2–4 meaningful options (recommendation first when justified), accept
 free-text corrections, and ask openly when options would be dishonest.
+Before the push of a branch that carries a plan, worktree-task F4b runs
+the `implementation-review` agent on the diff (`work.implementation-review`);
+the amont-agent hook journals a push whose tree it did not review, and
+only the person may overrule a `rework`.
 
 ## Relais routing
 
