@@ -153,7 +153,10 @@ below names one of them.
     count against the budget.
 - **F3. Record.** In the plan: input → expected → actual per check, tick
   the phases, append Decision log / Outcome. Set `status: done` only if
-  verification passed AND this PR implements the last phase. Offer to turn
+  verification passed AND this PR implements the last phase. Record only
+  what was observed before the push: never a "pending" row for CI, the
+  merge or a release — those live in the PR checks and the tag
+  (`work.plan-closes-with-the-branch`). Offer to turn
   a lasting decision into an ADR in this same PR
   (`work.lasting-decisions-become-adrs`). Screenshots and raw output go
   OUTSIDE the worktree (`~/.claude/amont-agent/attestations/<sha>/`).
@@ -185,9 +188,15 @@ below names one of them.
   4. Post `returned: <verdict> (<tokens>, <seconds>)`.
   5. Record it in the plan under `## Implementation review`, at most 5
      lines of about 20 words, verdict first: the verdict; findings fixed;
-     findings kept as `deliberate: <reason>`; tokens and seconds. Commit
-     `docs(plan): implementation review`. The canonical tree does not
-     change, so the review stays bound.
+     findings kept as `deliberate: <reason>`; tokens and seconds. This is
+     the branch's **closing commit** (`work.plan-closes-with-the-branch`),
+     the counterpart of the plan commit that opened it: in the same commit
+     set `status: done` (or keep `active` and name the next phase), with
+     every Verification row holding its observed result and none pending.
+     Commit `docs(plan): <slug>, done` (or `…, phase N`). The canonical
+     tree does not change, so the review stays bound. It stays the LAST
+     commit: anything committed after it (a CI fix) returns to F1, and the
+     closing commit is made again on top.
   6. `approve`, or `approve-with-changes` with every finding fixed or
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
