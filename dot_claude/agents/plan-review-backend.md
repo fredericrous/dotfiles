@@ -18,7 +18,9 @@ To find who calls, references or implements a symbol, ask `LSP`
 grepping: it resolves traits, interfaces and re-exports that a text
 search misses. fleet-lsp answers only from the repository's pinned
 server, once that server has loaded; an error names its cause and fix,
-and then Grep is the fallback.
+and then Grep is the fallback. For a pyright or typescript-language-server
+version fleet-lsp has not measured (`fleet-lsp doctor` says so), an empty
+answer in the first minute is not evidence: confirm it with Grep.
 
 Look for:
 
