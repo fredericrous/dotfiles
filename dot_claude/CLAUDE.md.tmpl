@@ -295,24 +295,13 @@ only the person may overrule a `rework`.
 
 ## Relais routing
 
-In a repo that has `relais.toml` and a trust grant (`relais doctor` is
-green there), route bounded implementation and inspection tasks through
-the `relais` skill without being asked: one objective, a write scope, and
+In a repo with `relais.toml` and a trust grant, route bounded
+implementation and inspection tasks through relais (the plugin's
+`/relais` skill) without being asked: one objective, a write scope, and
 acceptance a command can verify. Keep design, multi-repo, ops and
-exploratory work in the parent session. Say in one line which path a task
-took and why; a repo without a policy gets ordinary work, stated as such.
-
-- Every relais command runs with the repo (or task worktree) root as cwd
-  (`cd <root> && relais …`); the session's own cwd is usually
-  `~/Developer/Perso`, which is not a repo. The CLI finds `relais.toml`
-  upward from any subdirectory, never from outside the repo.
-- `relais run` refuses a dirty tree and builds its candidate in its own
-  worktree from the base SHA, so commit (or finish) unrelated work first;
-  the worktree-isolation rule above still governs anything the parent
-  edits by hand.
-- A run's outcome, not a worker's completion message, is the acceptance.
-  `needs_decision` is the user's call unless the answer is already in the
-  request.
+exploratory work in the session, and say in one line which path a task
+took. `needs_decision` is the person's call unless the request already
+answers it.
 
 ## Security
 
