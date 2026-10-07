@@ -243,6 +243,15 @@
     "typescript-lsp@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true
   },
+  "extraKnownMarketplaces": {
+    "fleet-lsp": {
+      "source": {
+        "source": "github",
+        "repo": "fredericrous/fleet-lsp",
+        "ref": "release"
+      }
+    }
+  },
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "agentPushNotifEnabled": true
