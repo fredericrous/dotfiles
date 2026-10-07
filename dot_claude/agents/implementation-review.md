@@ -19,9 +19,9 @@ when the diff was too large to inline). Open at most 10 more files or
 To find who calls, references or implements a symbol, ask `LSP`
 (`incomingCalls`, `findReferences`, `goToImplementation`) before
 grepping: it resolves traits, interfaces and re-exports that a text
-search misses. An error or an empty answer proves nothing: the server
-may still be indexing, or rooted outside this repository. Confirm
-"no callers" with Grep before you rely on it.
+search misses. fleet-lsp answers only from the repository's pinned
+server, once that server has loaded; an error names its cause and fix,
+and then Grep is the fallback.
 
 Check, in this order:
 
