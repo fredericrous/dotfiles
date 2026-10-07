@@ -295,13 +295,16 @@ only the person may overrule a `rework`.
 
 ## Relais routing
 
-In a repo with `relais.toml` and a trust grant, route bounded
-implementation and inspection tasks through relais (the plugin's
-`/relais` skill) without being asked: one objective, a write scope, and
-acceptance a command can verify. Keep design, multi-repo, ops and
-exploratory work in the session, and say in one line which path a task
-took. `needs_decision` is the person's call unless the request already
-answers it.
+Route bounded implementation and inspection tasks through relais (the
+plugin's `relais` skill) without being asked, in any repository: one
+objective, a write scope, and acceptance a command can verify. Write the
+contract from the approved plan or the request; never ask the person for
+its fields. A repository that is not set up yet is set up by relais itself
+on that first run: its onboard and trust tools ask the person, and a
+*Not now* means doing the task in the session. Keep design, multi-repo,
+ops and exploratory work in the session, and say in one line which path a
+task took. `needs_decision` is the person's call unless the request
+already answers it.
 
 ## Security
 
