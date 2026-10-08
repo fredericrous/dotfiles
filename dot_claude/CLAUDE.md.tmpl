@@ -143,9 +143,19 @@ to `main` outright ("Pushing to branch main is forbidden. Open a Pull
 Request."), so branch + PR is the only route — don't reach for
 `git push --no-verify` to get around it.
 
+**An approved plan is carried to production without asking** (ADR-0029,
+`work.agent-lands-the-plan`): merge each of its pull requests on green CI and
+an approved implementation review (`merge-when-green`), cut the release a
+later phase needs (`tag-release`), let GitOps deploy, and run and observe the
+live phases. Ask only what the plan left open — a product or design choice,
+work outside its phases, a destructive step it does not name, a `rework`
+that survives its Delta, an ADR-0028 preview. Never mark the plan's own
+merge or release as a `🧑 decision`, and never add "a person watches" to a
+phase you can observe.
+
 The standing rule of confirming before destructive/hard-to-reverse operations
 (force-push, amending shared history, dropping branches) applies everywhere,
-including the user's own repos.
+including the user's own repos — unless the approved plan names the step.
 
 **Never use `gh pr merge --auto` on the user's repos.** None of them have
 branch protection requiring status checks before merge, so `--auto` merges
@@ -161,8 +171,9 @@ and the merge in one compound command — read the poll result first. Use the
 The fleet decision is `work.merge-on-green`, and `aval rule work.merge-on-green`
 has the wording. worktree-task F9 runs it once CI is green and the
 implementation review is settled. A PR that must wait for another PR or a
-release says `merge-after:` and stays open. Releases still happen only on
-request.
+release says `merge-after:` and stays open. A release is cut on request, or
+without asking when an approved plan needs it (ADR-0029,
+`work.release-when-the-plan-needs-it`).
 
 ## Forgejo API ({{ .forge.host }})
 
