@@ -157,6 +157,13 @@ status,conclusion` (or `gh pr checks <n>`) until `status=completed` and
 and the merge in one compound command — read the poll result first. Use the
 `merge-when-green` skill for this instead of improvising the poll loop.
 
+**Merge your own implementation PRs on green; do not stop at an open PR.**
+The fleet decision is `work.merge-on-green`, and `aval rule work.merge-on-green`
+has the wording. worktree-task F9 runs it once CI is green and the
+implementation review is settled. A PR that must wait for another PR or a
+release says `merge-after:` and stays open. Releases still happen only on
+request.
+
 ## Forgejo API ({{ .forge.host }})
 
 The self-hosted forge is fully usable from this machine — opening/merging PRs,
