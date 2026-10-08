@@ -1,6 +1,6 @@
 ---
 name: tag-release
-description: Cut a version tag that drives a CI build/publish (npm, ghcr image, etc.) safely — commit, verify HEAD actually advanced, only then tag, then verify the published artifact.
+description: Cut a version tag that drives a CI build/publish (npm, ghcr image, etc.) safely — commit, verify HEAD actually advanced, only then tag, then verify the published artifact. Use when the person asks for a release, AND without asking when an approved plan needs one — a later phase deploys the released artifact, or the release is the plan's outcome (work.release-when-the-plan-needs-it, ADR-0029).
 ---
 
 # tag-release

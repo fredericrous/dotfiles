@@ -1,6 +1,6 @@
 ---
 name: merge-when-green
-description: Poll a PR's checks until they pass, then merge it — GitHub (gh) AND Forgejo/{{ .forge.host }} (curl API recipe inside). Use for EVERY PR merge, whenever asked to "merge", "merge when green" or "merge once CI passes" — never gh pr merge --auto, never a hand-written poll loop or curl to /merge.
+description: Poll a PR's checks until they pass, then merge it — GitHub (gh) AND Forgejo/{{ .forge.host }} (curl API recipe inside). Use for EVERY PR merge: when asked to "merge", "merge when green" or "merge once CI passes", AND without being asked for each pull request of an approved plan once its implementation review approves (work.merge-on-green, ADR-0029) — never gh pr merge --auto, never a hand-written poll loop or curl to /merge.
 ---
 
 # merge-when-green
