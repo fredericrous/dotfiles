@@ -222,18 +222,23 @@ below names one of them.
   `git ls-remote origin refs/heads/<branch>`, and open ONE pull request
   whose body carries the verification record.
 - **F7. UI push** (the push carries interface changes in a repository with a
-  user interface; fleet ADR-0023, `work.preview-is-guided`). The person works
+  user interface; fleet ADR-0028, `work.preview-unless-planned-evidence`,
+  `work.preview-is-guided`). The person works
   on several projects at once and will not remember where this one stood.
   **Never ask for an approval without a guide.**
   0. **Planned evidence** (ADR-0028, `work.preview-unless-planned-evidence`).
-     If the approved plan's body has a `## Preview` section whose first
-     non-empty line starts with `evidence:`, do steps 2 and 3 (screenshots,
-     guide), compare every existing screen against the base, and put the
+     If the plan approved through ExitPlanMode has, in its body, a
+     `## Preview` section whose first non-empty line starts with
+     `evidence:`, do steps 1–3 (server, screenshots, guide), compare every
+     existing screen against the base, and put the
      guide, screenshots and comparison in the PR body. Ask nothing, then push
      as in F6: the hook passes the push and journals `evidence`. If the
      comparison shows a visible change the plan did not decide, the
-     exemption lapses: run steps 1–7 as usual. A push touching screens drawn
-     from a picked mockup never takes this path.
+     exemption lapses: run steps 1–7 as usual. The hook still holds the push,
+     so ask as usual, when the section was added after the plan's first
+     commit, the branch carries only a pointer plan (`canonical:`), the plan
+     landed on main before the branch, the base ref is missing, or the push
+     touches screens drawn from a picked mockup.
   1. Dependencies are already there from the Start bootstrap; re-run that
      step only if the rebase in F1 changed the lockfile. Start the dev
      server on a free port and keep it up until the person answers.
@@ -251,9 +256,9 @@ below names one of them.
      - Reference;
      - Already checked.
      Write it for someone who has not seen this session.
-  4. **Register it**, as its own foreground command (a leading
-     `cd <worktree> &&` is fine; copying images next to the guide is a
-     separate command before it, never chained):
+  4. **Register it** in the foreground, as the last command of its Bash call
+     (anything joined by `&&` or `;` may come before it; never pipe it,
+     redirect it or put it in `$(…)`):
      `amont-agent preview register --url <url> --guide <that guide.md> --open`
      It refuses an incomplete guide. `--open` opens the rendered guide page
      in the person's browser.
