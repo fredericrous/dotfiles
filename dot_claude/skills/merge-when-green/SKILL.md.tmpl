@@ -45,6 +45,22 @@ Standing rule (see `~/.claude/CLAUDE.md` § Repo ownership / PR workflow): **nev
 
 5. **If any check failed or is still running when asked to report status:** don't merge. Report which check(s) are red/pending and stop — let the user decide whether to wait, fix, or override.
 
+6. **After a merge, bring the live checkout up to date, but only by fast-forward.** This applies on GitHub and Forgejo alike. The live checkout is the repo's primary checkout (the first line of `git worktree list`), not a task worktree. The person works there, so touch it only when it is safe, and never with anything but a fast-forward. Run it as its own command:
+   ```bash
+   LIVE=$(git -C <any-worktree-of-the-repo> worktree list --porcelain | awk '/^worktree /{print $2; exit}')
+   git -C "$LIVE" fetch origin -q
+   DEF=$(git -C "$LIVE" symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
+   GD=$(git -C "$LIVE" rev-parse --absolute-git-dir)
+   if [ "$(git -C "$LIVE" branch --show-current)" != "$DEF" ]; then echo "live: on $(git -C "$LIVE" branch --show-current), not $DEF; left alone"
+   elif [ -n "$(git -C "$LIVE" status --porcelain --untracked-files=no)" ]; then echo "live: uncommitted changes; left alone"
+   elif [ -e "$GD/MERGE_HEAD" ] || [ -d "$GD/rebase-merge" ] || [ -d "$GD/rebase-apply" ]; then echo "live: merge/rebase in progress; left alone"
+   else git -C "$LIVE" merge --ff-only -q "origin/$DEF" && echo "live: fast-forwarded to $(git -C "$LIVE" rev-parse --short HEAD)" || echo "live: cannot fast-forward (local commits?); left alone"
+   fi
+   ```
+   - Each "left alone" outcome is one line in your report. Never resolve it yourself: no stash, no reset, no rebase, no checkout of another branch.
+   - `--ff-only` refuses rather than overwriting an untracked file, so untracked files are not checked first.
+   - Use `git -C`, never `cd` into the live checkout: the session's cwd persists.
+
 ## Forgejo ({{ .forge.host }}) — `gh` does NOT work here
 
 `homelab`, `application-landscape` and the other self-hosted repos live on
@@ -109,7 +125,9 @@ $CURL -H "Content-Type: application/json" -X POST \
 `Do` is `merge` / `rebase` / `squash`. **These repos use merge commits** — their
 history is uniformly `Merge pull request '…' (#n)` — so `merge` is the default
 here, not the `--squash` above. Expect `HTTP 200`; verify by pulling `main` and
-checking the merge commit landed, never by the exit code alone.
+checking the merge commit landed, never by the exit code alone. Then run
+step 6 above (the live-checkout fast-forward), which works the same on either
+forge.
 
 `merge_when_checks_succeed: true` exists in the API and is the Forgejo
 equivalent of `--auto` — **do not use it**, for the same reason: without
