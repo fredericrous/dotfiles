@@ -26,11 +26,20 @@ Standing rule (see `~/.claude/CLAUDE.md` § Git hygiene): in repos where a `v*` 
    ```
    Compare against the pre-commit SHA. If the commit-msg hook rejected the commit (common failure modes in this user's repos: subject >50 chars, gitmoji-prefix eating the character budget, `--no-verify` needed for a Helm-template false-positive), HEAD will NOT have moved. **STOP here if it didn't** — surface the hook's rejection reason, fix the commit message/content, and retry step 1. Do not proceed to tagging on an unchanged HEAD.
 
-3. **Only once HEAD has confirmed-advanced, tag and push:**
+3. **Only once HEAD has confirmed-advanced, tag, then push — as two separate commands:**
    ```bash
-   git tag v<version>
-   git push origin v<version>
+   git tag v<version> <sha>        # one command
    ```
+   ```bash
+   git push origin v<version>      # the next command, after the tag exists
+   ```
+   Never `git tag … && git push …` in one command: the amont-agent push
+   guards judge the whole command before any of it runs, so the tag does
+   not exist yet, the push "cannot be read", and under deny it is held
+   (2026-10-08, duro v5.5.0). A push of an existing tag needs no preview
+   and no implementation review — never hand it to the person.
+   Push from a clean task worktree whose builds are current (the pre-push
+   gate tests the working tree), not from the live checkout.
    (If the repo also needs the commit itself pushed to `main` first, per the repo-ownership rule, push the branch before or together with the tag — check the repo's actual release workflow trigger.)
 
 4. **Watch the release workflow, verifying `conclusion` explicitly** (not `gh run watch --exit-status` alone — see `~/.claude/CLAUDE.md` § Before pushing):
@@ -43,6 +52,12 @@ Standing rule (see `~/.claude/CLAUDE.md` § Git hygiene): in repos where a `v*` 
    - npm: `npm view <pkg>@<version>` or `npm pack <pkg>@<version>` and inspect.
    - container image: check the digest/sha that was actually pushed (`gh api` on the release, or `docker manifest inspect`), not just that the job exited 0.
    - GH release: confirm the expected assets are attached.
+
+6. **Once the artifact is verified, clean up.** A worktree only becomes sweepable when its PR is merged AND contained in a release tag, so this is the moment the release makes worktrees removable:
+   - Remove the worktree(s) this release used (the bump, the tag push), from the primary checkout.
+   - Fast-forward the live checkout: `merge-when-green` step 6, the same guarded command, never anything but `--ff-only`.
+   - Sweep the repo: `python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply`. It removes only worktrees that are clean, pushed, merged and released, and keeps the rest.
+   - Put what it removed and kept in the report, one line each. A release is not done until this step has run.
 
 ## Recovery if the tag ended up on the wrong commit
 
