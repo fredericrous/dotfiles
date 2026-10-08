@@ -283,9 +283,27 @@ below names one of them.
   - An approval given before the person had a guide is not informed. Hold
     the push, give the guide, and ask again.
 - **F8.** Any code change or rebase after F4 returns to F1.
-- **F9. Teardown: required, and the finish is not done without it.** Run it
-  only after the push succeeds (confirmed with `git ls-remote`). It is
-  never "cleanup for later": skipping it has left merged worktrees behind.
+- **F9. Merge on green** (`work.merge-on-green`). Do not stop at an open pull
+  request, and do not ask: run the `merge-when-green` skill on every
+  implementation PR this finish opened. It merges once every check on the
+  head has completed with success, and only when all of these hold:
+  - the F4b review is `approve`, or `approve-with-changes` with every
+    finding fixed or named deliberate;
+  - any `merge-after: <repo>#<n>` in the PR body has merged, with its
+    release out when it names one;
+  - the person has not said to hold it.
+
+  A red check is a failure under the F2 budget. Read the log, fix it in this
+  worktree, and return to F1; the next F4b is a fresh round 1 on the new
+  tree. Keep the worktree until the merge, for exactly this.
+
+  A PR that must wait for a release, or for another PR, stays open with its
+  `merge-after:` line, and the report says what it waits for. Never cut the
+  release yourself (`work.release-on-request`).
+- **F10. Teardown: required, and the finish is not done without it.** Run it
+  after the merge in F9, or once the push succeeds (confirmed with
+  `git ls-remote`) for a PR that F9 left open. It is never "cleanup for
+  later": skipping it has left merged worktrees behind.
   1. Remove this worktree from the **primary** checkout (not from inside
      itself), using `git -C` so no `cd` persists:
      ```bash
@@ -305,7 +323,7 @@ below names one of them.
   3. In the report, say what was removed and what the sweep kept, one line
      each.
 
-- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill. That skill's step 6 fast-forwards the live checkout after the merge, so this finish does not touch it: before the merge there is nothing new on `origin/main` to bring in.
+- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); F9 merges it with the `merge-when-green` skill (`work.merge-on-green`). That skill's step 6 fast-forwards the live checkout after the merge, so this finish does not touch it: before the merge there is nothing new on `origin/main` to bring in.
 - A release (`tag-release`) ends with the same sweep, because a worktree becomes sweepable only once its PR is in a release tag.
 
 No release unless the person asks for one (`work.release-on-request`).
