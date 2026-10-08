@@ -201,7 +201,10 @@ below names one of them.
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
      for the new tree, `Delta.`, the round-1 findings, the diff since,
-     "answer resolved / not resolved / new blocker for each". There is no
+     "answer resolved / not resolved / new blocker for each". The Delta may
+     resume the same reviewer with `SendMessage` (the block first in the
+     message) instead of a fresh launch: the hook counts a resumed round on
+     its new tree (amont-agent ≥ 2.30). There is no
      third pass: a `rework` that survives the Delta goes to the person with
      a **marked** AskUserQuestion — its text starts with
      `[implementation-review <repo>@<sha64>]` (the full id from
@@ -219,9 +222,23 @@ below names one of them.
   `git ls-remote origin refs/heads/<branch>`, and open ONE pull request
   whose body carries the verification record.
 - **F7. UI push** (the push carries interface changes in a repository with a
-  user interface; fleet ADR-0023, `work.preview-is-guided`). The person works
+  user interface; fleet ADR-0028, `work.preview-unless-planned-evidence`,
+  `work.preview-is-guided`). The person works
   on several projects at once and will not remember where this one stood.
   **Never ask for an approval without a guide.**
+  0. **Planned evidence** (ADR-0028, `work.preview-unless-planned-evidence`).
+     If the plan approved through ExitPlanMode has, in its body, a
+     `## Preview` section whose first non-empty line starts with
+     `evidence:`, do steps 1–3 (server, screenshots, guide), compare every
+     existing screen against the base, and put the
+     guide, screenshots and comparison in the PR body. Ask nothing, then push
+     as in F6: the hook passes the push and journals `evidence`. If the
+     comparison shows a visible change the plan did not decide, the
+     exemption lapses: run steps 1–7 as usual. The hook still holds the push,
+     so ask as usual, when the section was added after the plan's first
+     commit, the branch carries only a pointer plan (`canonical:`), the plan
+     landed on main before the branch, the base ref is missing, or the push
+     touches screens drawn from a picked mockup.
   1. Dependencies are already there from the Start bootstrap; re-run that
      step only if the rebase in F1 changed the lockfile. Start the dev
      server on a free port and keep it up until the person answers.
@@ -239,22 +256,23 @@ below names one of them.
      - Reference;
      - Already checked.
      Write it for someone who has not seen this session.
-  4. **Register it**, as its own foreground command (a leading
-     `cd <worktree> &&` is fine; copying images next to the guide is a
-     separate command before it, never chained):
+  4. **Register it** in the foreground, as the last command of its Bash call
+     (anything joined by `&&` or `;` may come before it; never pipe it,
+     redirect it or put it in `$(…)`):
      `amont-agent preview register --url <url> --guide <that guide.md> --open`
      It refuses an incomplete guide. `--open` opens the rendered guide page
      in the person's browser.
-     Its JSON prints `label` (and `aliases`): the question in step 6 names
-     one of them, or the answer approves nothing. A register that did not
+     Its JSON prints `question_prefix` (`[preview <id>] <label>`): the
+     question in step 6 starts with it, verbatim. A register that did not
      bind says so right after it runs; run the command it prints.
   5. **Open the app for them** with Claude in Chrome: a tab at the URL,
      already at the state step 1 of "Try it" reaches (for example the panel
      already open). Say which tab it is.
   6. **Print the brief in the terminal**: the guide's sections, short. Then,
      in the SAME turn, ask ONE marked question with AskUserQuestion:
-     - its text begins with the project and the one-line change, then
-       `[preview <id>]` and every `repo@<7-char sha>` it covers;
+     - its text begins with the register's `question_prefix`, verbatim,
+       then the project and the one-line change (the id in the marker is
+       what binds; it starts with the commit's short sha);
      - options exactly `Approve`, `Request changes`, `Hold`, with no
        "(Recommended)" suffix;
      - never pre-fill `answers`.
@@ -265,29 +283,32 @@ below names one of them.
   - An approval given before the person had a guide is not informed. Hold
     the push, give the guide, and ask again.
 - **F8.** Any code change or rebase after F4 returns to F1.
+- **F9. Teardown: required, and the finish is not done without it.** Run it
+  only after the push succeeds (confirmed with `git ls-remote`). It is
+  never "cleanup for later": skipping it has left merged worktrees behind.
+  1. Remove this worktree from the **primary** checkout (not from inside
+     itself), using `git -C` so no `cd` persists:
+     ```bash
+     git -C <repo-root> worktree remove ../<repo>-wt-<slug>
+     ```
+     If it refuses because of untracked files, inspect them first. Don't
+     `--force` blindly: it may be legitimate leftover build output, but check.
+  2. Sweep the other worktrees in this repo. A merged PR elsewhere does not
+     clean itself up. Run it from the primary checkout: after step 1 the
+     shell's cwd can be the worktree just removed.
+     ```bash
+     cd <repo-root> && python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply
+     ```
+     It removes only worktrees that are clean, fully pushed, merged and
+     contained in a release tag, and leaves anything it cannot verify. See
+     the `worktree-sweep` skill.
+  3. In the report, say what was removed and what the sweep kept, one line
+     each.
+
+- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill. That skill's step 6 fast-forwards the live checkout after the merge, so this finish does not touch it: before the merge there is nothing new on `origin/main` to bring in.
+- A release (`tag-release`) ends with the same sweep, because a worktree becomes sweepable only once its PR is in a release tag.
 
 No release unless the person asks for one (`work.release-on-request`).
-
-Only after the push succeeds, remove the worktree from the **primary**
-checkout (not from inside itself):
-
-```bash
-cd <repo-root>
-git worktree remove ../<repo>-wt-<slug>
-```
-
-- If `git worktree remove` refuses because of untracked files, inspect them first (don't `--force` blindly — it may be legitimate leftover build output, but check).
-- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill.
-
-Then sweep any *other* worktree in this repo that became redundant while you were
-working — a merged PR elsewhere does not clean itself up:
-
-```bash
-python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply
-```
-
-It removes only worktrees that are clean, fully pushed, merged, and contained in a
-release tag; anything it cannot verify is left alone. See the `worktree-sweep` skill.
 
 ## Cleanup (abandon)
 
