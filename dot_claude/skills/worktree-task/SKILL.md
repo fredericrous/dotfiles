@@ -265,29 +265,32 @@ below names one of them.
   - An approval given before the person had a guide is not informed. Hold
     the push, give the guide, and ask again.
 - **F8.** Any code change or rebase after F4 returns to F1.
+- **F9. Teardown: required, and the finish is not done without it.** Run it
+  only after the push succeeds (confirmed with `git ls-remote`). It is
+  never "cleanup for later": skipping it has left merged worktrees behind.
+  1. Remove this worktree from the **primary** checkout (not from inside
+     itself), using `git -C` so no `cd` persists:
+     ```bash
+     git -C <repo-root> worktree remove ../<repo>-wt-<slug>
+     ```
+     If it refuses because of untracked files, inspect them first. Don't
+     `--force` blindly: it may be legitimate leftover build output, but check.
+  2. Sweep the other worktrees in this repo. A merged PR elsewhere does not
+     clean itself up. Run it from the primary checkout: after step 1 the
+     shell's cwd can be the worktree just removed.
+     ```bash
+     cd <repo-root> && python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply
+     ```
+     It removes only worktrees that are clean, fully pushed, merged and
+     contained in a release tag, and leaves anything it cannot verify. See
+     the `worktree-sweep` skill.
+  3. In the report, say what was removed and what the sweep kept, one line
+     each.
+
+- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill. That skill's step 6 fast-forwards the live checkout after the merge, so this finish does not touch it: before the merge there is nothing new on `origin/main` to bring in.
+- A release (`tag-release`) ends with the same sweep, because a worktree becomes sweepable only once its PR is in a release tag.
 
 No release unless the person asks for one (`work.release-on-request`).
-
-Only after the push succeeds, remove the worktree from the **primary**
-checkout (not from inside itself):
-
-```bash
-cd <repo-root>
-git worktree remove ../<repo>-wt-<slug>
-```
-
-- If `git worktree remove` refuses because of untracked files, inspect them first (don't `--force` blindly — it may be legitimate leftover build output, but check).
-- One implementation pull request per repo per plan (`work.one-implementation-pr-per-repo-per-plan`); merge it with the `merge-when-green` skill.
-
-Then sweep any *other* worktree in this repo that became redundant while you were
-working — a merged PR elsewhere does not clean itself up:
-
-```bash
-python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply
-```
-
-It removes only worktrees that are clean, fully pushed, merged, and contained in a
-release tag; anything it cannot verify is left alone. See the `worktree-sweep` skill.
 
 ## Cleanup (abandon)
 
