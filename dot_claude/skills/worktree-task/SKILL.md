@@ -201,7 +201,10 @@ below names one of them.
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
      for the new tree, `Delta.`, the round-1 findings, the diff since,
-     "answer resolved / not resolved / new blocker for each". There is no
+     "answer resolved / not resolved / new blocker for each". The Delta may
+     resume the same reviewer with `SendMessage` (the block first in the
+     message) instead of a fresh launch: the hook counts a resumed round on
+     its new tree (amont-agent ≥ 2.30). There is no
      third pass: a `rework` that survives the Delta goes to the person with
      a **marked** AskUserQuestion — its text starts with
      `[implementation-review <repo>@<sha64>]` (the full id from
@@ -222,6 +225,15 @@ below names one of them.
   user interface; fleet ADR-0023, `work.preview-is-guided`). The person works
   on several projects at once and will not remember where this one stood.
   **Never ask for an approval without a guide.**
+  0. **Planned evidence** (ADR-0028, `work.preview-unless-planned-evidence`).
+     If the approved plan's body has a `## Preview` section whose first
+     non-empty line starts with `evidence:`, do steps 2 and 3 (screenshots,
+     guide), compare every existing screen against the base, and put the
+     guide, screenshots and comparison in the PR body. Ask nothing, then push
+     as in F6: the hook passes the push and journals `evidence`. If the
+     comparison shows a visible change the plan did not decide, the
+     exemption lapses: run steps 1–7 as usual. A push touching screens drawn
+     from a picked mockup never takes this path.
   1. Dependencies are already there from the Start bootstrap; re-run that
      step only if the rebase in F1 changed the lockfile. Start the dev
      server on a free port and keep it up until the person answers.
@@ -245,16 +257,17 @@ below names one of them.
      `amont-agent preview register --url <url> --guide <that guide.md> --open`
      It refuses an incomplete guide. `--open` opens the rendered guide page
      in the person's browser.
-     Its JSON prints `label` (and `aliases`): the question in step 6 names
-     one of them, or the answer approves nothing. A register that did not
+     Its JSON prints `question_prefix` (`[preview <id>] <label>`): the
+     question in step 6 starts with it, verbatim. A register that did not
      bind says so right after it runs; run the command it prints.
   5. **Open the app for them** with Claude in Chrome: a tab at the URL,
      already at the state step 1 of "Try it" reaches (for example the panel
      already open). Say which tab it is.
   6. **Print the brief in the terminal**: the guide's sections, short. Then,
      in the SAME turn, ask ONE marked question with AskUserQuestion:
-     - its text begins with the project and the one-line change, then
-       `[preview <id>]` and every `repo@<7-char sha>` it covers;
+     - its text begins with the register's `question_prefix`, verbatim,
+       then the project and the one-line change (the id in the marker is
+       what binds; it starts with the commit's short sha);
      - options exactly `Approve`, `Request changes`, `Hold`, with no
        "(Recommended)" suffix;
      - never pre-fill `answers`.

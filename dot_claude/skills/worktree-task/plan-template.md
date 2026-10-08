@@ -30,6 +30,13 @@ What this deliberately leaves alone.
 The observable behaviour after the change. This is the spec. Link a picked
 artboard here when one exists (handoff.prove-fidelity).
 
+## Preview
+Optional, for an interface change (ADR-0028). Leave it out and the person
+previews the commit as usual. Keep it only when the person will have nothing
+left to judge:
+evidence: <why: the visible change is one this plan decides, and the
+screenshot comparison will show nothing else>
+
 ## Phases
 - [ ] Phase 1 — <one line>; becomes one or more commits
 - [ ] 🧑 decision: <question the person answers, with 2–4 options>
