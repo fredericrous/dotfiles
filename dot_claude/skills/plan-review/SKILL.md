@@ -94,10 +94,22 @@ decision for the person, and is never silently dropped.
 
 ## 4. Merge
 
-- Findings that duplicate each other become one edit.
-- Findings that conflict become a 👉 decision for the person, with both
+The main session keeps a ledger, not the plan. Editing the plan there
+resends the old and new text of every edit: on 2026-10-10 the integration
+edits cost more of the session's context than the four reviews they applied.
+
+- Write one line per finding: `accepted`, `rejected: <why>`, or
+  `👉 decision`. Findings that duplicate each other become one line.
+  Findings that conflict become a 👉 decision for the person, with both
   positions.
-- Apply the accepted edits to the plan body.
+- `cp` the plan to a scratch file first: round 2's diff is `diff -u`
+  against that copy.
+- Launch one `general-purpose` subagent, in the foreground, to apply the
+  accepted lines. Its prompt carries the plan's path and each accepted
+  finding verbatim, with its evidence and proposed edit. It edits the file
+  and returns only one line per changed section, plus the output of
+  `amont-agent plan-sha --short <plan>`.
+- Do not read the plan back. Read a section only to settle a 👉 decision.
 
 ## 5. Round 2: delta only
 
@@ -116,8 +128,12 @@ backend stale.
    - the diff of the plan since round 1;
    - "answer resolved / not resolved / new blocker for each".
 
-Make no edit to the body after round 2. If one is unavoidable, re-run
-backend alone on it.
+After round 2, only a `high` or blocking finding may change the body. A
+`medium` or `low` one gets no edit: it goes in step 7's review section, as
+`carried into implementation`, and the landed plan keeps it beside the
+body. An edit after round 2 makes backend stale, so a blocker that forces
+one is applied through the step 4 subagent, and backend alone re-runs on
+it.
 
 ## 6. No round 3
 
@@ -139,9 +155,10 @@ Writing these never changes the body's sha, so the reviews stay bound.
      for example
      `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend.`;
   4. `**Changed by review:**` up to 3 items;
-  5. `**Verdicts:**` the counts per verdict, and any delta rework that went
-     to the person. Token counts and timings go in the full reviews, not
-     here.
+  5. `**Verdicts:**` the counts per verdict, any delta rework that went
+     to the person, and the count of findings `carried into
+     implementation` (listed in the full reviews). Token counts and
+     timings go in the full reviews, not here.
 - **`## Full reviews (reference)`** as the last heading: each reviewer's
   verdict, findings, tokens and wall time, as a plain section with no
   `<details>`.
@@ -154,7 +171,8 @@ Then call ExitPlanMode.
 
 After ExitPlanMode is rejected with feedback:
 
-1. Edit the plan.
+1. Edit the plan through the step 4 subagent, with the person's words as
+   the accepted line.
 2. Run `amont-agent plan-panel <plan.md>`. It prints `panel=delta`, with
    backend plus the reviewers of any area that is new.
 3. Launch those once. Each prompt carries:
