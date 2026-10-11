@@ -102,13 +102,53 @@ edits cost more of the session's context than the four reviews they applied.
   `👉 decision`. Findings that duplicate each other become one line.
   Findings that conflict become a 👉 decision for the person, with both
   positions.
+- Record the round, BEFORE the plan is edited (it saves the reviewed body
+  only while the file still holds it), with one object per finding on
+  stdin; `section` is the plan heading it is about, `area` one of
+  cli|ui|ops|large|lang:<x> when it is clear:
+
+  ```sh
+  echo '[{"role":"tui","severity":"high","disposition":"accepted","section":"Behaviour","area":"cli"}]' \
+    | amont-agent plan-review record <plan.md>
+  ```
+
+  It prints `wrote N rows (round R, plan <sha12>)`. Exit 1 (ledger or a
+  missing agent id) is reported in one line and never stops the review.
 - `cp` the plan to a scratch file first: round 2's diff is `diff -u`
   against that copy.
-- Launch one `general-purpose` subagent, in the foreground, to apply the
-  accepted lines. Its prompt carries the plan's path and each accepted
-  finding verbatim, with its evidence and proposed edit. It edits the file
-  and returns only one line per changed section, plus the output of
-  `amont-agent plan-sha --short <plan>`.
+- Apply the accepted findings with no model: each reviewer's `Patches:`
+  block is read from the transcript, so stdin names only the findings:
+
+  ```sh
+  echo '[{"role":"tui","finding":1},{"role":"unix","finding":3}]' \
+    | amont-agent plan-apply <plan.md>
+  ```
+
+  It prints `applied tui#1 <section>` or `unmatched tui#3: <reason>` per
+  finding, then `applied A, unmatched U, sha <sha12>`, and exits 0 when
+  everything matched. On 2026-10-11 the four subagents that applied one
+  review's findings cost about 320k tokens, more than the reviews.
+- Exit 3 means some patch did not match (the matched ones are written; a
+  `next:` line and an `<<<APPLY path=… sha=…>>>` block end stdout). Apply
+  the remainder the cheapest way that fits:
+  - at most 3 unmatched findings, each edit under about 15 lines: the main
+    session applies them with `Edit` — the old and new text cost less than
+    a subagent's read of the plan;
+  - otherwise ONE `general-purpose` subagent, in the foreground, with
+    `model: "sonnet"` on the call. Its prompt starts with the `<<<APPLY …>>>`
+    block verbatim, then the unmatched findings with their evidence and
+    edit, and ends with: run `amont-agent plan-apply --check <plan>` with
+    the findings on stdin as the last command and return its output only.
+    `sonnet` is a preference, not a pin: relais's router keeps it when
+    routing is off or abstains, and overrides it when its table decides.
+  Then record what the fallback did:
+
+  ```sh
+  echo '[{"role":"tui","finding":3}]' | amont-agent plan-apply --record-fallback <plan.md>
+  ```
+
+  Exit 1 from any of these (no transcript, ledger) is reported in one line
+  and never stops the review: apply the edits by hand and go on.
 - Do not read the plan back. Read a section only to settle a 👉 decision.
 
 ## 5. Round 2: delta only
@@ -124,7 +164,8 @@ backend stale.
 3. Each prompt carries:
    - the block;
    - `Round 2.`;
-   - that reviewer's round-1 findings;
+   - that reviewer's round-1 findings, and that its patches were applied
+     by `plan-apply` where they matched;
    - the diff of the plan since round 1;
    - "answer resolved / not resolved / new blocker for each".
 
@@ -132,8 +173,8 @@ After round 2, only a `high` or blocking finding may change the body. A
 `medium` or `low` one gets no edit: it goes in step 7's review section, as
 `carried into implementation`, and the landed plan keeps it beside the
 body. An edit after round 2 makes backend stale, so a blocker that forces
-one is applied through the step 4 subagent, and backend alone re-runs on
-it.
+one is applied as in step 4 (`plan-apply`, then the remainder), and
+backend alone re-runs on it.
 
 ## 6. No round 3
 
@@ -152,8 +193,8 @@ Writing these never changes the body's sha, so the reviews stay bound.
   2. `👉 **Decide:** <what the person must decide>`, or
      `none — approve if <the one-line bet>`;
   3. `📍 <repositories> · <where the work stands> · next: <one action>. Panel: <roles>.`,
-     for example
-     `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend.`;
+     each role with the model it ran on, for example
+     `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend (fable-5-1), tui (sonnet-5-5).`;
   4. `**Changed by review:**` up to 3 items;
   5. `**Verdicts:**` the counts per verdict, any delta rework that went
      to the person, and the count of findings `carried into
@@ -171,8 +212,9 @@ Then call ExitPlanMode.
 
 After ExitPlanMode is rejected with feedback:
 
-1. Edit the plan through the step 4 subagent, with the person's words as
-   the accepted line.
+1. Edit the plan as in step 4's remainder (the main session's `Edit` when
+   small, else the Sonnet subagent), with the person's words as the
+   accepted line; there is no reviewer patch for it.
 2. Run `amont-agent plan-panel <plan.md>`. It prints `panel=delta`, with
    backend plus the reviewers of any area that is new.
 3. Launch those once. Each prompt carries:

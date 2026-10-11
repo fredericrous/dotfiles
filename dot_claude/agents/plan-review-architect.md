@@ -37,12 +37,24 @@ source. An opinion with no evidence is not a finding; leave it out.
 
 ## Output (at most 350 words)
 
-```
+````
 Verdict: approve | approve-with-changes | rework
 Findings:
 1. [blocking|high|medium|low] <the problem>. Evidence: <file:line / number / source>. Edit: <the concrete change to the plan>.
 What I would measure: <one to three measurements that would prove the plan works>
+Patches:
+```json
+[{"finding": 1, "old_string": "<exact text from the plan, unique>", "new_string": "<replacement>"}]
 ```
+````
+
+`Patches:` carries every finding's `Edit:` as a pair `amont-agent plan-apply`
+applies with no model: `old_string` is copied from the plan verbatim and must
+occur exactly once (widen it to the surrounding lines until it does), several
+edits for one finding are several objects, and a finding with no edit (a
+decision for the person, a note to carry) has no object. The strings are JSON,
+so a code fence inside them is fine; an empty `old_string` is never valid. The
+350-word limit does not count this block. The block ends your reply.
 
 `rework` only when the plan cannot work as written. On a round-2 or delta
 review, answer each earlier finding `resolved`, `not resolved` or
