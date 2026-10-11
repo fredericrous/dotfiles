@@ -132,8 +132,15 @@ edits cost more of the session's context than the four reviews they applied.
   `next:` line and an `<<<APPLY path=… sha=…>>>` block end stdout). Apply
   the remainder the cheapest way that fits:
   - at most 3 unmatched findings, each edit under about 15 lines: the main
-    session applies them with `Edit` — the old and new text cost less than
-    a subagent's read of the plan;
+    session writes the pair itself and runs `plan-apply` again with it on
+    stdin, so the edit is applied, recorded and checked like any other —
+    the old and new text cost less than a subagent's read of the plan:
+
+    ```sh
+    echo '[{"role":"tui","finding":3,"patch":{"old_string":"…","new_string":"…"}}]' \
+      | amont-agent plan-apply <plan.md>
+    ```
+
   - otherwise ONE `general-purpose` subagent, in the foreground, with
     `model: "sonnet"` on the call. Its prompt starts with the `<<<APPLY …>>>`
     block verbatim, then the unmatched findings with their evidence and
@@ -141,14 +148,16 @@ edits cost more of the session's context than the four reviews they applied.
     the findings on stdin as the last command and return its output only.
     `sonnet` is a preference, not a pin: relais's router keeps it when
     routing is off or abstains, and overrides it when its table decides.
-  Then record what the fallback did:
+  After the subagent, record what it did (it finds the launch by the
+  `<<<APPLY` block, so this is the subagent path only):
 
   ```sh
   echo '[{"role":"tui","finding":3}]' | amont-agent plan-apply --record-fallback <plan.md>
   ```
 
-  Exit 1 from any of these (no transcript, ledger) is reported in one line
-  and never stops the review: apply the edits by hand and go on.
+  Exit 1 (no transcript, ledger) or 2 (a usage error, such as a reviewer's
+  empty `old_string`: treat that finding as unmatched) is reported in one
+  line and never stops the review: apply the edits by hand and go on.
 - Do not read the plan back. Read a section only to settle a 👉 decision.
 
 ## 5. Round 2: delta only
