@@ -452,6 +452,25 @@ def lookup_pr(repo: Repo, branch: str):
 # Drop -- or is alive right now: two seen 2026-10-07 had vanished minutes later,
 # rehearsals in flight. So the owning pid must be dead.
 AMONT_PUSH_RE = re.compile(r"^amont-push-(\d+)-[0-9a-f]{16}$")
+
+# relais checks a run's candidate out under its own state directory
+# (<state>/worktrees/<run>/task, <state>/verify/<run>/verify-base) and owns
+# its lifecycle: only relais can tell a dead run from a live one, so the
+# sweep never removes these -- it names the run and the command that does.
+RELAIS_STATE = Path(os.environ.get("RELAIS_STATE_DIR") or HOME / ".local" / "state" / "relais")
+RELAIS_RUN_RE = re.compile(r"^run-[0-9a-f]+-[0-9a-f]+$")
+
+
+def relais_run_of(path: Path) -> str | None:
+    """The relais run a worktree belongs to, if it lives in relais's state."""
+    try:
+        rel = path.resolve().relative_to(RELAIS_STATE.resolve())
+    except (ValueError, OSError):
+        return None
+    parts = rel.parts
+    if len(parts) >= 2 and parts[0] in {"worktrees", "verify"} and RELAIS_RUN_RE.match(parts[1]):
+        return parts[1]
+    return None
 AMONT_PUSH_MIN_AGE = 3600
 
 
@@ -517,6 +536,10 @@ def local_gates(wt: Worktree, repo: Repo) -> bool:
     if wt.branch is None:
         if AMONT_PUSH_RE.match(wt.path.name):
             amont_push_leftover(wt, repo)
+            return False
+        run = relais_run_of(wt.path)
+        if run is not None:
+            wt.verdict, wt.reason = HOLD, f"relais run {run} owns it -- relais resume --retire {run}"
             return False
         wt.verdict, wt.reason = HOLD, "detached HEAD -- no branch to trace"
         return False
