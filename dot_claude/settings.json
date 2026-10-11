@@ -1,4 +1,7 @@
 {
+  "env": {
+    "RUST_BACKTRACE": "1"
+  },
   "permissions": {
     "allow": [
       "Bash(export KUBECONFIG=*)",
