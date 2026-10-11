@@ -155,9 +155,11 @@ edits cost more of the session's context than the four reviews they applied.
   echo '[{"role":"tui","finding":3}]' | amont-agent plan-apply --record-fallback <plan.md>
   ```
 
-  Exit 1 (no transcript, ledger) or 2 (a usage error, such as a reviewer's
-  empty `old_string`: treat that finding as unmatched) is reported in one
-  line and never stops the review: apply the edits by hand and go on.
+  Exit 1 (no transcript, ledger) is reported in one line and never stops
+  the review: apply the edits by hand and go on. Exit 2 is a usage error
+  and nothing was applied: when it names a reviewer's patch (an empty
+  `old_string`), drop that finding from stdin, re-run, and apply it in the
+  remainder.
 - Do not read the plan back. Read a section only to settle a 👉 decision.
 
 ## 5. Round 2: delta only
@@ -221,9 +223,10 @@ Then call ExitPlanMode.
 
 After ExitPlanMode is rejected with feedback:
 
-1. Edit the plan as in step 4's remainder (the main session's `Edit` when
-   small, else the Sonnet subagent), with the person's words as the
-   accepted line; there is no reviewer patch for it.
+1. Edit the plan as in step 4's remainder: `plan-apply` with a `patch`
+   object under `role: "person"` when small, else the Sonnet subagent, with
+   the person's words as the accepted line; there is no reviewer patch for
+   it.
 2. Run `amont-agent plan-panel <plan.md>`. It prints `panel=delta`, with
    backend plus the reviewers of any area that is new.
 3. Launch those once. Each prompt carries:
