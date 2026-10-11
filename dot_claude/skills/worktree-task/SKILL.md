@@ -160,6 +160,9 @@ below names one of them.
   a lasting decision into an ADR in this same PR
   (`work.lasting-decisions-become-adrs`). Screenshots and raw output go
   OUTSIDE the worktree (`~/.claude/amont-agent/attestations/<sha>/`).
+  They last 30 days unless a plan cites them as `attestations/<name>` or
+  the directory holds a `.keep`; then they move to `.trash-<secs>-<name>`
+  for 7 days (`amont-agent attestations` lists what stays and why).
 - **F4. Commit.** Where amont is installed this commit IS the project gate
   (ADR-0009 runs the tests at pre-commit); only a repo without amont runs a
   separate `make check` or equivalent here. Run `git status` first and
