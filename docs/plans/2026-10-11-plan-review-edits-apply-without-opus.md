@@ -1,5 +1,5 @@
 ---
-status: active
+status: done
 branch: feat/plan-apply
 repos: [amont-agent, relais, dotfiles]
 canonical: amont-agent:docs/plans/2026-10-11-plan-review-edits-apply-without-opus.md
@@ -28,12 +28,30 @@ plan-review skill's merge step applies it with `amont-agent plan-apply`.
   bullet and the model-in-panel-line wording had been edited in place).
 
 ## Phases
-- [ ] Phase 2 — the 11 agents, the skill, `chezmoi apply`.
+- [x] Phase 2 — the 11 agents, the skill, `chezmoi apply`.
 
 ## Verification
-- `chezmoi diff` shows only these files; after `chezmoi apply` the installed
-  copies equal the source; a real `/plan-review` round returns a parseable
-  `Patches:` block per reviewer and `plan-apply` applies it → observed.
+- `chezmoi status` from the worktree listed the 12 files of this change,
+  plus unrelated `MM`/`R` rows (settings.json, worktree-sweep, fish, git
+  config: installed copies edited in place) → observed 2026-10-11; only the
+  12 targets were applied (`chezmoi apply --source <wt> <targets>`, the
+  skill with `--force` after checking its installed copy equalled the
+  levelled source), and `cmp` shows all 12 installed files equal the source.
+- amont-agent upgraded to 2.36.0 (brew, tap at 2.36.0; release assets for
+  six targets plus SHA256SUMS) → observed.
+- The agents' output shape through the real binary: a transcript holding a
+  `plan-review-backend` result ending in the four-backtick `Patches:` block
+  → `applied backend#1 Goal` / `applied 1, unmatched 0, sha be4f504ef257`,
+  exit 0; step 8's `role: "person"` patch object → `applied person#1 Goal`,
+  exit 0; two merge rows in the ledger → observed.
+- A real `/plan-review` round on the new agents is Phase 4 of the canonical
+  plan (the first three reviews are what it measures).
 
 ## Decision log
 - 2026-10-11 — pointer plan: the decision and the reviews live in amont-agent.
+
+## Implementation review
+
+- Round 1 `approve-with-changes` (37k, 42 s), Delta `approve-with-changes` (40k, 85 s), final read `approve` (42k, 9 s).
+- Fixed: the small remainder goes through `plan-apply` with a `patch` object (recorded and checked); `--record-fallback` is the subagent path only; exit 2 applied nothing; step 8 follows step 4.
+- Would still check by hand (reviewer): that a real reviewer widens `old_string` until unique.
