@@ -131,7 +131,14 @@ edits cost more of the session's context than the four reviews they applied.
 - Exit 3 means some patch did not match (the matched ones are written; a
   `next:` line and an `<<<APPLY path=… sha=…>>>` block end stdout). Apply
   the remainder the cheapest way that fits:
-  - at most 3 unmatched findings, each edit under about 15 lines: the main
+  - `unmatched … overlaps …` never goes to a subagent: two reviewers edited
+    the same lines, and a subagent resolves that with one merged edit that
+    contains neither `new_string`, so `--check` cannot verify it (measured
+    2026-10-11: 12 of 12 such patches came back unverified, after a 107k
+    fallback). The main session reads the two patches, writes the merged
+    pair itself and re-runs `plan-apply` with it as a `patch` object, as
+    below.
+  - at most 3 `absent` findings, each edit under about 15 lines: the main
     session writes the pair itself and runs `plan-apply` again with it on
     stdin, so the edit is applied, recorded and checked like any other —
     the old and new text cost less than a subagent's read of the plan:
@@ -141,7 +148,8 @@ edits cost more of the session's context than the four reviews they applied.
       | amont-agent plan-apply <plan.md>
     ```
 
-  - otherwise ONE `general-purpose` subagent, in the foreground, with
+  - otherwise (more or larger `absent` findings) ONE `general-purpose`
+    subagent, in the foreground, with
     `model: "sonnet"` on the call. Its prompt starts with the `<<<APPLY …>>>`
     block verbatim, then the unmatched findings with their evidence and
     edit, and ends with: run `amont-agent plan-apply --check <plan>` with
