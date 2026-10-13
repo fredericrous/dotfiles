@@ -10,8 +10,8 @@
 # same name, and the skill under test. So the copy under test answers, and the
 # other skills still compete for the prompt (guidance.trigger-is-measured, ADR-0032).
 #
-# stdout: one sorted line per prompt (id, kind, verdict, hits/runs), then the
-# summary. stderr: the run plan, then one progress line per run.
+# stdout: one sorted line per prompt (id, kind, verdict ok|FAIL|error|budget,
+# hits/runs), then the summary. stderr: the run plan, then one progress line per run.
 # Exit: 0 pass (should >= 80%, near-miss <= 10%), 1 below that, 2 usage,
 # 3 a run errored or the budget ran out
 # (3 wins over 1). Interrupted: 130 (INT) or 143 (TERM).
@@ -37,7 +37,17 @@ if [ "${1:-}" = --worker ]; then
   id=$2 kind=$3 round=$4 prompt=$5
   out="$TT_DIR/out/$id.$round"
   # Budget guard, under a lock: start only if spent + in flight stays under it.
-  until mkdir "$TT_DIR/lock" 2>/dev/null; do sleep 0.1; done
+  # The lock wait is bounded: 600 tries, 60 s.
+  tries=0
+  until mkdir "$TT_DIR/lock" 2>/dev/null; do
+    tries=$((tries + 1))
+    if [ "$tries" -ge 600 ]; then
+      printf '%s %s %s error 0\n' "$id" "$kind" "$round" >"$TT_DIR/res/$id.$round"
+      printf '%-10s error   lock not acquired in 60 s\n' "$id" >&2
+      exit 0
+    fi
+    sleep 0.1
+  done
   spent=$(cat "$TT_DIR"/res/* 2>/dev/null | awk '{ s += $5 } END { printf "%.4f", s + 0 }')
   inflight=$(find "$TT_DIR/run" -type f | wc -l | tr -d ' ')
   if awk -v s="$spent" -v i="$inflight" -v p="$reserve_usd" -v m="$TT_MAX" \
@@ -50,7 +60,9 @@ if [ "${1:-}" = --worker ]; then
   : >"$TT_DIR/run/$id.$round"
   rmdir "$TT_DIR/lock"
 
-  (cd "$TT_DIR/home" && CLAUDE_CONFIG_DIR="$TT_DIR/cfg" claude -p "$prompt" --max-budget-usd "$per_run_usd" \
+  # A run is bounded in cost by --max-budget-usd and in time by `timeout`
+  # (GNU coreutils, first on PATH on this machine).
+  (cd "$TT_DIR/home" && CLAUDE_CONFIG_DIR="$TT_DIR/cfg" timeout 300 claude -p "$prompt" --max-budget-usd "$per_run_usd" \
     --permission-mode default --disallowedTools Write,Edit,NotebookEdit \
     --allowedTools Skill --output-format stream-json --verbose \
     </dev/null >"$out.jsonl" 2>"$out.err")
@@ -86,14 +98,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case $runs in '' | *[!0-9]* | 0) usage ;; esac
-case $max_usd in *[!0-9.]*) usage ;; esac
+if [ -n "$max_usd" ] && ! printf '%s\n' "$max_usd" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then usage; fi
 [ -f "$skill_dir/SKILL.md" ] || { echo "skill-trigger-test: no SKILL.md in $skill_dir" >&2; exit 2; }
 [ -f "$prompts" ] || { echo "skill-trigger-test: no prompts file $prompts" >&2; exit 2; }
 if ! awk -F'\t' 'NF && !/^#/ && (NF != 3 || ($2 != "should" && $2 != "near-miss")) { bad = 1 } END { exit bad }' "$prompts"; then
   echo "skill-trigger-test: $prompts needs 3 tab-separated columns: id, should|near-miss, prompt" >&2
   exit 2
 fi
-for tool in claude jq; do
+for tool in claude jq timeout; do
   command -v "$tool" >/dev/null 2>&1 || { echo "skill-trigger-test: $tool not found on PATH" >&2; exit 3; }
 done
 
@@ -102,12 +114,15 @@ name=$(awk '/^---$/ { f++; next } f == 1 && /^name:/ { sub(/^name:[ \t]*/, ""); 
 
 # --- scratch dir, signals ------------------------------------------------------
 TT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/skill-trigger-test.XXXXXX") || exit 3
+jobs_pid=
 jobs_pgid=
 cleanup() { rm -rf "$TT_DIR"; }
 on_signal() {
   trap - INT TERM EXIT
   # The workers run in their own process group (set -m below): kill that
   # group, never group 0, which may be the caller's shell.
+  # A signal can land between the launch and the pgid lookup.
+  [ -z "$jobs_pgid" ] && [ -n "$jobs_pid" ] && jobs_pgid=$(ps -o pgid= -p "$jobs_pid" | tr -d ' ')
   [ -n "$jobs_pgid" ] && kill -TERM "-$jobs_pgid" 2>/dev/null
   cleanup
   exit "$1"
@@ -121,15 +136,18 @@ config="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 # Auth and the global CLAUDE.md, as a real session has them; no hooks,
 # plugins or memory.
 [ -f "$config/CLAUDE.md" ] && cp "$config/CLAUDE.md" "$TT_DIR/cfg/CLAUDE.md"
-jq '{apiKeyHelper, env} | with_entries(select(.value != null))' "$config/settings.json" \
-  >"$TT_DIR/cfg/settings.json" 2>/dev/null || echo '{}' >"$TT_DIR/cfg/settings.json"
+if ! jq '{apiKeyHelper, env} | with_entries(select(.value != null))' "$config/settings.json" \
+  >"$TT_DIR/cfg/settings.json" 2>/dev/null; then
+  echo "skill-trigger-test: $config/settings.json unreadable, running without auth settings" >&2
+  echo '{}' >"$TT_DIR/cfg/settings.json"
+fi
 for installed in "$config"/skills/*/; do
   [ -f "$installed/SKILL.md" ] || continue
   other=$(awk '/^---$/ { f++; next } f == 1 && /^name:/ { sub(/^name:[ \t]*/, ""); print; exit }' "$installed/SKILL.md")
   [ "${other:-$(basename "$installed")}" = "$name" ] && continue
   cp -R "$installed" "$TT_DIR/cfg/skills/"
 done
-cp -R "$skill_dir" "$TT_DIR/cfg/skills/$name"
+cp -R "$skill_dir" "$TT_DIR/cfg/skills/$name" || { echo "skill-trigger-test: cannot copy $skill_dir" >&2; exit 3; }
 
 n=$(awk -F'\t' 'NF && !/^#/' "$prompts" | wc -l | tr -d ' ')
 [ -n "$max_usd" ] || max_usd=$(awk -v n="$n" -v r="$runs" -v p="$reserve_usd" 'BEGIN { printf "%.2f", n * r * p }')
