@@ -70,15 +70,17 @@ Sessions: $transcript" \
     --permission-mode default --disallowedTools Write,Edit,NotebookEdit \
     --allowedTools "$tools" \
     --add-dir "$HOME/.claude/projects" "$HOME/.claude/amont-agent" \
-    --output-format json >"$sections.json" 2>"$sections.err"; then
+    --output-format json >"$sections.json" 2>"$sections.err" &&
+    [ "$(jq -r '.is_error' "$sections.json" 2>/dev/null)" = false ]; then
     result=$(jq -r '.result // ""' "$sections.json")
     cost=$(jq -r '.total_cost_usd // "?"' "$sections.json")
     n=$(printf '%s\n' "$result" | sed -n 's/^candidates: *\([0-9][0-9]*\).*/\1/p' | head -n 1)
     total=$((total + ${n:-0}))
     printf 'total_cost_usd: %s\n\n%s\n' "$cost" "$result" >>"$sections"
   else
+    # Exit 0 with is_error (a spent budget, a max-turns stop) fails here too.
     rc=$?
-    printf "Failed: exit %s\n\n\`\`\`\n%s\n\`\`\`\n" "$rc" "$(tail -n 20 "$sections.err")" >>"$sections"
+    printf "Failed: exit %s\n\n\`\`\`\n%s\n%s\n\`\`\`\n" "$rc" "$(jq -r '.subtype // empty, .result // empty' "$sections.json" 2>/dev/null | tail -n 5)" "$(tail -n 20 "$sections.err")" >>"$sections"
   fi
 done
 

@@ -131,7 +131,7 @@ POSIX sh (under `make lint`). Each run:
    `-p` may not run) with the installed retro SKILL.md body plus the session
    path as the prompt, `--model sonnet --max-budget-usd 1 --permission-mode default --disallowedTools Write,Edit,NotebookEdit` (a global bypass mode would otherwise leave every tool open), read-only tools
    (`--allowedTools Read,Grep,Glob,Bash(amont-agent mine*),Bash(jq *)` style
-   list, settled in the Phase 1 spike), `RETRO_WEEKLY=1` and a fixed cwd
+   list, settled in the Phase 1 spike), a fixed cwd
    whose project slug step 1 excludes; a session over the Phase 1 size limit
    is skipped and named. First report line is `candidates: N`. Output to
    `~/.claude/retro/YYYY-MM-DD.md`; a failure writes the exit code and stderr
@@ -160,7 +160,7 @@ the license's condition, not a courtesy.
   `~/.claude/projects/*/*.jsonl` (last 60 days) for bug reports; keep the 10
   most common phrasings (redacted, no private terms) as the description's
   triggers and as the positive trigger prompts.
-- [x] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
+- [ ] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
   retro-weekly script, plist, loader, `.chezmoiignore` line; `make check`
   green; trigger test passes (Verification); one PR, merged on green.
 - [ ] Phase 3 — `chezmoi apply` of the target files only, `cmp` each; run
@@ -244,7 +244,8 @@ the license's condition, not a courtesy.
 - Trigger test (default model, scratch cwd with the skill in
   `.claude/skills`, only the Skill tool allowed): round 1 (neutral wording)
   3/10 + 0/10; round 2 ("Load this FIRST") 7/10 + 0/10, a re-run of the 3
-  misses hit 2; round 3 (+ "figure out why") **8/10 + 0/10 → pass**. Cost
+  misses hit 2; round 3 (+ "figure out why") **8/10 + 0/10 → pass**.
+  Prompts and harness: [trigger-test](2026-10-13-diagnosing-bugs-and-retro-skills.trigger-test.md). Cost
   of the three rounds: $12.04.
 - Batch dry run from the worktree (`RETRO_DIR` scratch, `RETRO_SKILL` the
   worktree file): report `candidates: 17` = 5 + 6 + 6 over sessions
