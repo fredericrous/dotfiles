@@ -266,6 +266,7 @@ the license's condition, not a courtesy.
 ## Implementation review
 approve (delta), after approve-with-changes in round 1 (98k tokens, 45 s in total).
 Fixed: duplicate copyright line, Phase 2 ticked before the merge, stale `RETRO_WEEKLY=1`, trigger harness not kept, exit 0 with `is_error` counted as success.
+PATH fix (`fix/retro-weekly-path`): approve-with-changes → approve (delta); fixed: second-PR reason logged, comment states the why (96k tokens, 98 s).
 Next: Phase 3 after the merge: `chezmoi apply` of the targets, `cmp`, a `launchctl kickstart` run.
 
 ## Outcome
