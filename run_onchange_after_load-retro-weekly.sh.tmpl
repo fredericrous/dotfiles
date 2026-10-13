@@ -1,0 +1,12 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/sh
+# (Re)load the weekly retro job when its plist changes.
+# plist sha: {{ include "private_Library/LaunchAgents/com.fredericrous.retro-weekly.plist.tmpl" | sha256sum }}
+# A failure only warns: with no GUI session (ssh) bootstrap fails, and that
+# must not abort `chezmoi apply`.
+plist="$HOME/Library/LaunchAgents/com.fredericrous.retro-weekly.plist"
+mkdir -p "$HOME/.claude/retro"
+launchctl bootout "gui/$(id -u)/com.fredericrous.retro-weekly" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$plist" ||
+  echo "warning: could not load $plist; run: launchctl bootstrap gui/$(id -u) $plist" >&2
+{{ end -}}

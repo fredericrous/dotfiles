@@ -2,7 +2,7 @@
 # `make render`: every template renders against the placeholder data in
 # ci/chezmoi.toml, into a temporary destination, hermetically — no key
 # (encrypted files excluded), no network (externals excluded), no script run
-# (scripts excluded). The two run_once_* templates are the ones that call
+# (scripts excluded). The run_once_* and run_onchange_* templates call
 # `include` and `lookPath`, so they are rendered on their own with
 # execute-template. chezmoi's state file goes into the same temporary
 # directory: it otherwise lands beside the config file and dirties the tree.
@@ -38,11 +38,11 @@ for f in Makefile tools.env ci amont.conf scripts docs README.md; do
   fi
 done
 
-# The run_once_* templates, one by one. Listed with a git pathspec: `*`
+# The run_once_* and run_onchange_* templates, one by one. Listed with a git pathspec: `*`
 # matches across `/`, and the two live at different depths. NUL-safe, since
 # a tracked path in this repository contains a space.
 n=0
-git ls-files -z -- '*run_once_*.tmpl' | tr '\0' '\n' > "$dst/run_once.list"
+git ls-files -z -- '*run_once_*.tmpl' '*run_onchange_*.tmpl' | tr '\0' '\n' > "$dst/run_once.list"
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   n=$((n + 1))
@@ -52,8 +52,8 @@ while IFS= read -r f; do
     exit 1
   fi
 done < "$dst/run_once.list"
-if [ "$n" -lt 2 ]; then
-  echo "render: expected at least 2 run_once_* templates, found $n" >&2
+if [ "$n" -lt 3 ]; then
+  echo "render: expected at least 3 run_once_*/run_onchange_* templates, found $n" >&2
   exit 1
 fi
 
@@ -66,4 +66,4 @@ if ! run execute-template --init --promptString "bitwarden server url=x" < .chez
   exit 1
 fi
 
-echo "  render ok ($n run_once templates, config template, home applied to a temp dir)" >&2
+echo "  render ok ($n script templates, config template, home applied to a temp dir)" >&2
