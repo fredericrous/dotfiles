@@ -1,5 +1,10 @@
 # Trigger test — diagnosing-bugs
 
+> Superseded by `~/.claude/tools/skill-trigger-test` (source
+> `dot_claude/tools/skill-trigger-test/`), with the prompts in
+> `dot_claude/skills/diagnosing-bugs/trigger-prompts.tsv`. This file keeps the
+> harness that produced the 2026-10-13 numbers.
+
 The harness behind the plan's trigger rows, kept so a later description
 change can be measured the same way. Prompts `p*` should load the skill;
 `n*` are near-misses (a fix whose cause is known, other work). Positive

@@ -149,9 +149,10 @@ an approved implementation review (`merge-when-green`), cut the release a
 later phase needs (`tag-release`), let GitOps deploy, and run and observe the
 live phases. Ask only what the plan left open — a product or design choice,
 work outside its phases, a destructive step it does not name, a `rework`
-that survives its Delta, an ADR-0028 preview. Never mark the plan's own
-merge or release as a `🧑 decision`, and never add "a person watches" to a
-phase you can observe.
+that survives its Delta, an ADR-0028 preview. Write the plan's own merge
+and release as agent steps, and observe every phase you can observe
+yourself: never a `🧑 decision` for the merge or release, never "a person
+watches".
 
 The standing rule of confirming before destructive/hard-to-reverse operations
 (force-push, amending shared history, dropping branches) applies everywhere,
@@ -273,8 +274,8 @@ Bash over the dedicated tools; this section overrides it for reading.
   it. The four largest results in the window were unbounded Reads of 67–86 KB.
 - **Search with the Grep and Glob tools** when the answer is a location; use
   Bash `grep`/`rg` only for pipelines (`| wc -l`, `| sort | uniq -c`).
-- **Do not re-read a file you already have in context** unless it was edited
-  since. Edit/Write results confirm the change; re-reading to verify is the
+- **Trust the Edit/Write result for a file already in context**; re-read it
+  only when something else changed it since. Re-reading to verify is the
   15% bucket.
 - **When a tool result was persisted to a file** ("Output too large … saved
   to …"), `grep`/`head -c` the saved file for the part you need. Reading it
