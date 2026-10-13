@@ -209,6 +209,9 @@ the license's condition, not a courtesy.
   inherited the session's PATH. The script now prepends `~/.local/bin`.
   Checked under `env -i HOME USER /bin/zsh -lc`: `candidates: 16` =
   6 + 6 + 4, $0.71. The kickstart is re-run after this fix is applied.
+- 2026-10-13 — The fix rides a second PR (`fix/retro-weekly-path`), against
+  `work.one-implementation-pr-per-repo-per-plan`, because PR #34 was already
+  merged: the failure only shows in Phase 3's live launchd run, after merge.
 
 ## Verification
 - Phase 2: `make check` in the worktree → `private-refs ok (N plaintext

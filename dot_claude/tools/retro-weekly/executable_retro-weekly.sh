@@ -17,8 +17,8 @@
 
 set -u
 
-# launchd's login zsh does not read .zshrc, which is where ~/.local/bin (the
-# `claude` install) joins PATH: the first kickstart failed with exit 127.
+# launchd's login zsh does not read .zshrc, where ~/.local/bin (the `claude`
+# install) joins PATH; jq and osascript are on the login PATH already.
 PATH="$HOME/.local/bin:$PATH"
 export PATH
 
