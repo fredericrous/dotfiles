@@ -5,14 +5,15 @@
 # --max-usd defaults to $0.35 per prompt and run.
 #
 # prompts.tsv has three tab-separated columns: id, should|near-miss, prompt.
-# Each prompt runs `claude -p` from a scratch directory that holds a copy of
-# the skill under a run-unique name, so an installed skill of the same name
-# cannot answer for it (guidance.trigger-is-measured, ADR-0032).
+# Each prompt runs `claude -p` with a scratch CLAUDE_CONFIG_DIR: the auth
+# settings, the global CLAUDE.md, every installed skill except the one of the
+# same name, and the skill under test. So the copy under test answers, and the
+# other skills still compete for the prompt (guidance.trigger-is-measured, ADR-0032).
 #
 # stdout: one sorted line per prompt (id, kind, verdict, hits/runs), then the
 # summary. stderr: the run plan, then one progress line per run.
 # Exit: 0 pass (should >= 80%, near-miss <= 10%), 1 below that, 2 usage,
-# 3 a run errored or loaded the installed copy, or the budget ran out
+# 3 a run errored or the budget ran out
 # (3 wins over 1). Interrupted: 130 (INT) or 143 (TERM).
 
 set -u
@@ -21,7 +22,8 @@ set -u
 PATH="$HOME/.local/bin:$PATH"
 export PATH
 
-per_run_usd=0.5
+per_run_usd=0.5   # hard cap of one run
+reserve_usd=0.35  # a run in flight counts as this: measured means were $0.07 (this tool) to $0.26 (with hooks)
 self=$(cd "$(dirname "$0")" && pwd)/$(basename "$0")
 parallel=5
 
@@ -38,7 +40,7 @@ if [ "${1:-}" = --worker ]; then
   until mkdir "$TT_DIR/lock" 2>/dev/null; do sleep 0.1; done
   spent=$(cat "$TT_DIR"/res/* 2>/dev/null | awk '{ s += $5 } END { printf "%.4f", s + 0 }')
   inflight=$(find "$TT_DIR/run" -type f | wc -l | tr -d ' ')
-  if awk -v s="$spent" -v i="$inflight" -v p="$per_run_usd" -v m="$TT_MAX" \
+  if awk -v s="$spent" -v i="$inflight" -v p="$reserve_usd" -v m="$TT_MAX" \
     'BEGIN { exit !(s + (i + 1) * p > m) }'; then
     rmdir "$TT_DIR/lock"
     printf '%s %s %s budget 0\n' "$id" "$kind" "$round" >"$TT_DIR/res/$id.$round"
@@ -48,18 +50,17 @@ if [ "${1:-}" = --worker ]; then
   : >"$TT_DIR/run/$id.$round"
   rmdir "$TT_DIR/lock"
 
-  (cd "$TT_DIR/home" && claude -p "$prompt" --max-budget-usd "$per_run_usd" \
+  (cd "$TT_DIR/home" && CLAUDE_CONFIG_DIR="$TT_DIR/cfg" claude -p "$prompt" --max-budget-usd "$per_run_usd" \
     --permission-mode default --disallowedTools Write,Edit,NotebookEdit \
     --allowedTools Skill --output-format stream-json --verbose \
     </dev/null >"$out.jsonl" 2>"$out.err")
   rc=$?
-  verdict=$(jq -rs --arg copy "$TT_COPY" --arg orig "$TT_NAME" --argjson rc "$rc" '
+  verdict=$(jq -rs --arg name "$TT_NAME" --argjson rc "$rc" '
     (map(select(.type == "result")) | last) as $r
     | [ .[] | select(.type == "assistant") | .message.content[]?
         | select(.type == "tool_use" and .name == "Skill") | .input.skill | tostring ] as $s
     | if $rc != 0 or $r == null or $r.is_error then "error"
-      elif ($s | index($copy)) != null then "HIT"
-      elif ($s | index($orig)) != null then "collision"
+      elif ($s | index($name)) != null then "HIT"
       else "miss" end' "$out.jsonl" 2>/dev/null || echo error)
   cost=$(jq -rs '(map(select(.type == "result")) | last | .total_cost_usd) // 0' "$out.jsonl" 2>/dev/null || echo 0)
   printf '%s %s %s %s %s\n' "$id" "$kind" "$round" "$verdict" "$cost" >"$TT_DIR/res/$id.$round"
@@ -98,7 +99,6 @@ done
 
 name=$(awk '/^---$/ { f++; next } f == 1 && /^name:/ { sub(/^name:[ \t]*/, ""); print; exit }' "$skill_dir/SKILL.md")
 [ -n "$name" ] || name=$(basename "$skill_dir")
-copy="$name-tt-$$"
 
 # --- scratch dir, signals ------------------------------------------------------
 TT_DIR=$(mktemp -d "${TMPDIR:-/tmp}/skill-trigger-test.XXXXXX") || exit 3
@@ -116,17 +116,26 @@ trap cleanup EXIT
 trap 'on_signal 130' INT
 trap 'on_signal 143' TERM
 
-mkdir -p "$TT_DIR/home/.claude/skills" "$TT_DIR/out" "$TT_DIR/res" "$TT_DIR/run"
-cp -R "$skill_dir" "$TT_DIR/home/.claude/skills/$copy"
-awk -v copy="$copy" '/^---$/ { f++ } f == 1 && /^name:/ { print "name: " copy; next } { print }' \
-  "$skill_dir/SKILL.md" >"$TT_DIR/home/.claude/skills/$copy/SKILL.md"
+mkdir -p "$TT_DIR/home" "$TT_DIR/cfg/skills" "$TT_DIR/out" "$TT_DIR/res" "$TT_DIR/run"
+config="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# Auth and the global CLAUDE.md, as a real session has them; no hooks,
+# plugins or memory.
+[ -f "$config/CLAUDE.md" ] && cp "$config/CLAUDE.md" "$TT_DIR/cfg/CLAUDE.md"
+jq '{apiKeyHelper, env} | with_entries(select(.value != null))' "$config/settings.json" \
+  >"$TT_DIR/cfg/settings.json" 2>/dev/null || echo '{}' >"$TT_DIR/cfg/settings.json"
+for installed in "$config"/skills/*/; do
+  [ -f "$installed/SKILL.md" ] || continue
+  other=$(awk '/^---$/ { f++; next } f == 1 && /^name:/ { sub(/^name:[ \t]*/, ""); print; exit }' "$installed/SKILL.md")
+  [ "${other:-$(basename "$installed")}" = "$name" ] && continue
+  cp -R "$installed" "$TT_DIR/cfg/skills/"
+done
+cp -R "$skill_dir" "$TT_DIR/cfg/skills/$name"
 
 n=$(awk -F'\t' 'NF && !/^#/' "$prompts" | wc -l | tr -d ' ')
-# Default ceiling: $0.35 a run, the measured mean ($0.26, 2026-10-13) plus headroom.
-[ -n "$max_usd" ] || max_usd=$(awk -v n="$n" -v r="$runs" 'BEGIN { printf "%.2f", n * r * 0.35 }')
+[ -n "$max_usd" ] || max_usd=$(awk -v n="$n" -v r="$runs" -v p="$reserve_usd" 'BEGIN { printf "%.2f", n * r * p }')
 printf '%s prompts × %s runs, ceiling $%s (≤ $%s a run), skill %s\n' "$n" "$runs" "$max_usd" "$per_run_usd" "$name" >&2
 
-export TT_DIR TT_COPY="$copy" TT_NAME="$name" TT_MAX="$max_usd" per_run_usd
+export TT_DIR TT_NAME="$name" TT_MAX="$max_usd" per_run_usd reserve_usd
 
 # --- runs ----------------------------------------------------------------------
 set -m
@@ -145,7 +154,7 @@ set +m
 cat "$TT_DIR"/res/* 2>/dev/null | awk -v quiet="$quiet" '
   { kind[$1] = $2; runs[$1]++; cost += $5
     if ($4 == "HIT") hits[$1]++
-    else if ($4 == "error" || $4 == "collision" || $4 == "budget") { bad[$1] = $4; broken++ } }
+    else if ($4 == "error" || $4 == "budget") { bad[$1] = $4; broken++ } }
   END {
     for (id in runs) {
       h = hits[id] + 0
