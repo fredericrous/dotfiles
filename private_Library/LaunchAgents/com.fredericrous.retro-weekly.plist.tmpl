@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Weekly retro over the sessions amont-agent flagged (~/.claude/tools/retro-weekly). -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.fredericrous.retro-weekly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>-lc</string>
+    <string>{{ .chezmoi.homeDir }}/.claude/tools/retro-weekly/retro-weekly.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Weekday</key>
+    <integer>1</integer>
+    <key>Hour</key>
+    <integer>8</integer>
+    <key>Minute</key>
+    <integer>57</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>{{ .chezmoi.homeDir }}/.claude/retro/launchd.out</string>
+  <key>StandardErrorPath</key>
+  <string>{{ .chezmoi.homeDir }}/.claude/retro/launchd.err</string>
+</dict>
+</plist>
