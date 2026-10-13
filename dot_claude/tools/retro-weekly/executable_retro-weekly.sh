@@ -17,6 +17,11 @@
 
 set -u
 
+# launchd's login zsh does not read .zshrc, which is where ~/.local/bin (the
+# `claude` install) joins PATH: the first kickstart failed with exit 127.
+PATH="$HOME/.local/bin:$PATH"
+export PATH
+
 retro_dir="${RETRO_DIR:-$HOME/.claude/retro}"
 journal="$HOME/.claude/amont-agent/journal.log"
 skill="${RETRO_SKILL:-$HOME/.claude/skills/retro/SKILL.md}"
