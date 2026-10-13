@@ -160,7 +160,7 @@ the license's condition, not a courtesy.
   `~/.claude/projects/*/*.jsonl` (last 60 days) for bug reports; keep the 10
   most common phrasings (redacted, no private terms) as the description's
   triggers and as the positive trigger prompts.
-- [ ] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
+- [x] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
   retro-weekly script, plist, loader, `.chezmoiignore` line; `make check`
   green; trigger test passes (Verification); one PR, merged on green.
 - [ ] Phase 3 — `chezmoi apply` of the target files only, `cmp` each; run
@@ -202,6 +202,16 @@ the license's condition, not a courtesy.
   raised from 2 to 3). Not in the plan; needed so `make check` covers it.
 - 2026-10-13 — The script takes `RETRO_DIR` and `RETRO_SKILL` overrides, so
   it can be run from the worktree before anything is installed.
+
+- 2026-10-13 — Phase 3's first `launchctl kickstart` failed: exit 127,
+  `claude: command not found` for all three sessions. launchd's login zsh
+  does not read `.zshrc`, where `~/.local/bin` joins PATH; the dry run had
+  inherited the session's PATH. The script now prepends `~/.local/bin`.
+  Checked under `env -i HOME USER /bin/zsh -lc`: `candidates: 16` =
+  6 + 6 + 4, $0.71. The kickstart is re-run after this fix is applied.
+- 2026-10-13 — The fix rides a second PR (`fix/retro-weekly-path`), against
+  `work.one-implementation-pr-per-repo-per-plan`, because PR #34 was already
+  merged: the failure only shows in Phase 3's live launchd run, after merge.
 
 ## Verification
 - Phase 2: `make check` in the worktree → `private-refs ok (N plaintext
@@ -256,6 +266,7 @@ the license's condition, not a courtesy.
 ## Implementation review
 approve (delta), after approve-with-changes in round 1 (98k tokens, 45 s in total).
 Fixed: duplicate copyright line, Phase 2 ticked before the merge, stale `RETRO_WEEKLY=1`, trigger harness not kept, exit 0 with `is_error` counted as success.
+PATH fix (`fix/retro-weekly-path`): approve-with-changes → approve (delta); fixed: second-PR reason logged, comment states the why (96k tokens, 98 s).
 Next: Phase 3 after the merge: `chezmoi apply` of the targets, `cmp`, a `launchctl kickstart` run.
 
 ## Outcome
