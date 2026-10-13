@@ -92,7 +92,7 @@ quiet=0
 while [ $# -gt 0 ]; do
   case $1 in
     --runs) [ $# -ge 2 ] || usage; runs=$2; shift 2 ;;
-    --max-usd) [ $# -ge 2 ] || usage; max_usd=$2; shift 2 ;;
+    --max-usd) [ $# -ge 2 ] && [ -n "$2" ] || usage; max_usd=$2; shift 2 ;;
     --quiet) quiet=1; shift ;;
     *) usage ;;
   esac

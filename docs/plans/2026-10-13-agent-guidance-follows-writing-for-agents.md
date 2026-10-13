@@ -37,6 +37,8 @@ its positive target (`guidance.state-the-target`, ADR-0032).
 - Exit codes: no arguments → 2; a 2-column TSV → 2; `--max-usd 0.01` → 3,
   every run `budget`, $0.00, no scratch dir left; a vague skill
   ("Helpers for various things.") on 2 should + 2 near-miss → 1, $1.03.
+- After the review fixes (`timeout 300`, bounded lock): a 4-prompt run →
+  `should 2/2 · near-miss 0/2 · $0.53`, exit 0; `--max-usd ""` → exit 2.
 - Signals: `kill -TERM` 10 s into a run → exit 143, tagged `claude -p`
   processes 6 → 0, scratch dir gone; SIGINT from a fresh session → exit
   130, 6 → 0, gone.
