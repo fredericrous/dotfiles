@@ -58,13 +58,14 @@ Look for candidates in each class. A class with nothing is fine; say so.
 - **Coding rules**: the review did not catch a mistake. Is a rule missing,
   unclear, or not enforced?
 - **Always-on text**: CLAUDE.md, MEMORY.md, skill descriptions. Is a line
-  wrong, stale, or too long? Did a skill not fire when it should have (for
-  example `diagnosing-bugs` on a red check)? Did a skill fire when it should
-  not have?
+  wrong, stale, or too long (`guidance.always-on-is-an-index`)? Did a skill
+  not fire when it should have (for example `diagnosing-bugs` on a red
+  check), or fire when it should not have (`guidance.pointer-names-when`)?
+  Does a prohibition lack its positive target (`guidance.state-the-target`)?
 - **Tool economy**: a call that returned much more than it needed (a whole
   file, a full log, a re-read), or a slow loop.
 - **No-ops**: an instruction that changes nothing, because the model does
-  it anyway.
+  it anyway (`guidance.delete-no-ops`).
 - **Information access**: the agent did not have a log, a metric, or a
   read-only view that would have answered the question.
 
