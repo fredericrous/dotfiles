@@ -153,14 +153,14 @@ and one line saying the text is adapted. The repository is public, so this is
 the license's condition, not a courtesy.
 
 ## Phases
-- [ ] Phase 1 — spike: run the SKILL.md-as-prompt call by hand on one flagged
+- [x] Phase 1 — spike: run the SKILL.md-as-prompt call by hand on one flagged
   session; record the transcript bytes of the top-3 candidates, the cost, and
   that a non-empty candidate list returns and that a Write attempt is refused; settle the tool list and size
   limit. Then mine wording: grep the person's prompts in
   `~/.claude/projects/*/*.jsonl` (last 60 days) for bug reports; keep the 10
   most common phrasings (redacted, no private terms) as the description's
   triggers and as the positive trigger prompts.
-- [ ] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
+- [x] Phase 2 — worktree on dotfiles: two skills, two NOTICE.md, the
   retro-weekly script, plist, loader, `.chezmoiignore` line; `make check`
   green; trigger test passes (Verification); one PR, merged on green.
 - [ ] Phase 3 — `chezmoi apply` of the target files only, `cmp` each; run
@@ -182,6 +182,26 @@ the license's condition, not a courtesy.
   sessions ($3 a week), because cost saving is a priority and retro reads.
 - 2026-10-13 — Done in the session, not through relais: multi-file guidance
   plus scheduling whose acceptance includes reading a report.
+
+- 2026-10-13 — Spike results: the SKILL.md body as a `claude -p` prompt
+  works headless ($0.41 on a 2.3 MB transcript, $0.21 on 16 MB: `jq` windows
+  keep the cost flat, so the size limit is 100 MB). Under `--permission-mode
+  default`, `jq` on a transcript is refused outside the cwd, so the call adds
+  `--add-dir ~/.claude/projects ~/.claude/amont-agent`. Tool list settled:
+  Read, Grep, Glob, Bash(jq/grep/sort/uniq/head/wc/amont-agent mine).
+- 2026-10-13 — Mined wording (8,178 person prompts, 60 days, 278 bug-like):
+  "investigate why X fails", "figure out why", "look into the X
+  failure/error", crash loop, flaky/red test, leak, "I tried X and got …",
+  "still …". Near-misses are fixes whose cause is known ("fix the lint",
+  "implement all 5 fixes"), so the description keys on "cause not known yet".
+- 2026-10-13 — A neutral description triggered 3/10: every miss went
+  straight to Bash. "Load this FIRST, before running any command or reading
+  code" raised it to 7/10 then 8/10; negatives stayed 0/10 each round.
+- 2026-10-13 — `scripts/render.sh` now also renders `run_onchange_*`
+  templates, so the new loader is checked like the run_once ones (minimum
+  raised from 2 to 3). Not in the plan; needed so `make check` covers it.
+- 2026-10-13 — The script takes `RETRO_DIR` and `RETRO_SKILL` overrides, so
+  it can be run from the worktree before anything is installed.
 
 ## Verification
 - Phase 2: `make check` in the worktree → `private-refs ok (N plaintext
@@ -209,6 +229,28 @@ the license's condition, not a courtesy.
   `retro` is absent from the model-invocable list but runs as `/retro`.
 - Phase 4: `ls ~/.claude/retro/2026-10-19.md` exists, and the count and the
   decision are recorded here.
+
+### Observed (2026-10-13, before the push)
+- Phase 1 spike, write probes (`--permission-mode default --disallowedTools
+  Write,Edit,NotebookEdit`): Write → "No such tool available"; `jq -n 1 >
+  ~/.claude/retro/probe2.txt` and `> ~/.claude/projects/probe3.txt` →
+  refused as an edit of a sensitive file; no probe file exists afterwards.
+- `make check` → `render ok (3 script templates …)`, `lint ok (14 scripts
+  of 117 tracked files)`, `private-refs ok (108 plaintext files scanned)`
+  (main: 99; +2 plan files, +7 new plaintext files), `ok tools render lint
+  private-refs`.
+- Description: one `description:` line in each SKILL.md; the next line is
+  `---` (diagnosing-bugs) and `disable-model-invocation: true` (retro).
+- Trigger test (default model, scratch cwd with the skill in
+  `.claude/skills`, only the Skill tool allowed): round 1 (neutral wording)
+  3/10 + 0/10; round 2 ("Load this FIRST") 7/10 + 0/10, a re-run of the 3
+  misses hit 2; round 3 (+ "figure out why") **8/10 + 0/10 → pass**. Cost
+  of the three rounds: $12.04.
+- Batch dry run from the worktree (`RETRO_DIR` scratch, `RETRO_SKILL` the
+  worktree file): report `candidates: 17` = 5 + 6 + 6 over sessions
+  de32f809, d1960b45, 6ce58c42; `total_cost_usd` 0.22 + 0.16 + 0.14 =
+  $0.52 ≤ $3; each candidate carries an Evidence line; the scratch dir held
+  only the report.
 
 ## Outcome
 
