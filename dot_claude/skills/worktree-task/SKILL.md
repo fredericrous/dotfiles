@@ -344,6 +344,6 @@ Confirm with the user before this mode if the worktree has any uncommitted work 
 
 ## Never
 
-Don't use `git stash` inside a worktree to move work between it and another checkout — `refs/stash` is shared across all worktrees of a repo. See the "Git stash policy (worktrees)" section of `~/.claude/CLAUDE.md` and use `gwt-stash-save`/`gwt-stash-pop` if a stash is genuinely needed.
+Move work between a worktree and another checkout with a WIP commit, not `git stash` — `refs/stash` is shared across all worktrees of a repo. If a stash is genuinely needed, follow the "Git stash policy (worktrees)" section of `~/.claude/CLAUDE.md`: `git stash push -u -m <tag>`, then apply that entry by its sha.
 
 Don't restore a mutated file with `git checkout -- <file>` while the tree holds uncommitted work: it reverts to the last commit and takes every unstaged edit with it. Copy the file aside and copy it back.
