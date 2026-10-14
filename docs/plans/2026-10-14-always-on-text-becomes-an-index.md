@@ -120,6 +120,11 @@ shows whether any guardrail weakened.
   here and close the plan.
 
 ## Decision log
+- 2026-10-14 — The 1M-context spawn item is dropped: no tool error with
+  "model may not exist" in any transcript since 2026-09-20.
+- 2026-10-14 — The `gwt-stash-*` helpers are not mentioned (they are
+  unreachable from zsh); the stash line names `git stash push -u -m <tag>`
+  and apply-by-sha, so the `gwt-stash` grep holds.
 - 2026-10-14 — Items only watched by an observe-stance rule (worktree
   isolation, broad `git add`, release tag push) shrink to one line like the
   rest, with the one-week rate comparison as the safety net (person's
@@ -176,6 +181,18 @@ Every id is an amont-agent rule (`amont-agent rules --json`).
 | `no-verify` | deny | 10-07 09:39 | 0 | 23364 | 0.00 |
 | `implementation-review` | deny | 10-07 09:39 | 4 | 23364 | 0.17 |
 | `plan-review-panel` | deny | 10-07 09:39 | 5 | 23364 | 0.21 |
+
+### Phase 2 — CLAUDE.md (2026-10-14)
+- Rendered `~/.claude/CLAUDE.md`: 19,827 → 4,625 bytes, 344 → 93 lines,
+  longest line 103 characters.
+- Every heading a skill cites is present (Git stash policy (worktrees), Git
+  worktree isolation, Git hygiene, Before pushing, Repo ownership / PR
+  workflow, Forgejo API, Shell environment). `grep -r gwt-stash dot_claude/`
+  prints nothing.
+- Every named id resolves: 9 aval rules (`aval rule <id>`), 10 amont-agent
+  rules (`rules --json`), 6 skills, 1 memory file. `merge-when-green` holds
+  the Forgejo curl recipe the index points to.
+- `make check` → ok (render, lint, private-refs).
 
 ## Outcome
 
