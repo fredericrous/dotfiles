@@ -22,8 +22,8 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
   `tag-release` skill. A tag is never force-pushed; a fix gets the next version.
 - Commit subjects: ≤ 50 characters, conventional prefix, no emoji (a hook adds it).
 - AGENTS.md generated block (`guidance.generated-block-rides-the-change`): `amont.fix`
-  is unset here, so run `amont agents-md` in the task worktree and stage it; run
-  `amont-fleet fix --apply --agents-md` only on worktrees, never on live checkouts.
+  is unset here, so run `amont agents-md` in the task worktree and stage it.
+  Never run `amont-fleet fix --apply --agents-md` on the live checkouts.
 - Add the `Co-Authored-By: Claude` trailer only on the user's own repos; for
   upstream or third-party repos, leave it out (ask when unsure).
 
@@ -36,8 +36,10 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
   exits 0.
 - Run a mutating command bare and check its effect, never through `tail`/`head`
   (amont-agent `pipe-to-tail`; `relais-verified-push` for pushes).
-- Web/UI work is done when the rendered result is checked in a real browser, from
-  the user's exact view (`work.agent-observes-the-live-phase`; `diagnosing-bugs`).
+- Web/UI work is done when the rendered result is checked in a real browser (Chrome
+  MCP or Playwright), not on CI green or a bundle grep.
+- For a reported visual bug, reproduce the user's exact view (route, mode, zoom,
+  state) before the fix and again after the deploy.
 
 ## Repo ownership / PR workflow
 
@@ -54,7 +56,8 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 - Both credentials are required: the mTLS cert `~/.config/mtls/{{ .forge.slug }}-client.{crt,key}`
   (missing → curl HTTP 000) and the token in `~/.netrc` — the curl recipe is in `merge-when-green`.
 - Probe `/repos/{owner}/{repo}` to test access; `/api/v1/user` 403s on this token's
-  scope. Pass the token in `$TOK` only. More: the `reference_forgejo_*` memories.
+  scope. Never echo the token into output, a commit or a PR body; pass it in `$TOK`.
+  More: the `reference_forgejo_*` memories.
 
 ## Shell environment
 
@@ -63,9 +66,10 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 - zsh traps are guarded by amont-agent (`equals-separator`, `glob-in-flag-value`,
   `glob-no-match`); `status` is read-only — name the variable `rc`.
 - `grep` is ugrep with `--ignore-files`: a recursive grep skips gitignored paths;
-  name the directory or pass `--no-ignore-files`. `find` is bfs; sed is GNU.
+  name the directory or pass `--no-ignore-files`. `find` is bfs; sed and coreutils
+  are GNU; awk, xargs, tar and diff are BSD; `stat -f '%…'` succeeds with a wrong answer.
 
-## Reading files
+## Reading files (overrides the bypass-mode default)
 
 - Read files with the Read tool, windowed on large ones; search with Grep/Glob;
   trust Edit/Write results (amont-agent `whole-file-dump`, `read-unbounded-large`,

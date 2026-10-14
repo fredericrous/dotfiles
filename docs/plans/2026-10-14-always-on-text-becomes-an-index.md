@@ -184,7 +184,7 @@ Every id is an amont-agent rule (`amont-agent rules --json`).
 
 ### Phase 2 — CLAUDE.md (2026-10-14)
 - Rendered `~/.claude/CLAUDE.md`: 19,827 → 4,625 bytes, 344 → 93 lines,
-  longest line 103 characters.
+  longest line 103 characters (4,899 bytes after the review fixes).
 - Every heading a skill cites is present (Git stash policy (worktrees), Git
   worktree isolation, Git hygiene, Before pushing, Repo ownership / PR
   workflow, Forgejo API, Shell environment). `grep -r gwt-stash dot_claude/`
@@ -193,6 +193,33 @@ Every id is an amont-agent rule (`amont-agent rules --json`).
   rules (`rules --json`), 6 skills, 1 memory file. `merge-when-green` holds
   the Forgejo curl recipe the index points to.
 - `make check` → ok (render, lint, private-refs).
+- Journal on the rewrite's Write of `dot_claude/CLAUDE.md.tmpl`:
+  `agent-guidance-written advise advised`; no `agent-guidance-shape` line (the
+  write shrank the file, so the ratchet stays silent).
+- Owner map (old section → where its detail lives now):
+
+| old section | owner |
+|---|---|
+| Git stash policy | amont-agent `bare-stash-pop` (deny); index line: stash list + push -m + apply by sha |
+| Worktree isolation | `worktree-task` skill; amont-agent `worktree-isolation` (observe) |
+| Git hygiene: cwd, git status, tag, subject, agents-md, trailer | index lines; `tag-release` skill; `guidance.generated-block-rides-the-change`; amont-agent `git-add-broad` |
+| Before pushing: local checks, gh run watch, bulk edits, pipe-to-tail, browser, exact view | `work.verification-loop-before-push`; `merge-when-green`; amont-agent `pipe-to-tail` (deny), `relais-verified-push`; index lines (bulk edit, browser, exact view) |
+| Repo ownership / PR workflow | `work.agent-lands-the-plan`, `work.merge-on-green`, `work.ask-only-what-the-plan-left-open`, `general.no-disabled-safety`; `merge-when-green` |
+| Forgejo API | index lines (two credentials, probe, never echo); `merge-when-green` recipe; `reference_forgejo_*` memories |
+| Shell environment | `claude_code_bash_tool_runs_zsh_not_fish.md`; amont-agent `equals-separator`, `glob-in-flag-value`, `glob-no-match`, `sed-in-place`, `stat-bsd-format`; index lines (rc, ugrep, tool flavors) |
+| Reading files | amont-agent `whole-file-dump`, `read-unbounded-large`, `file-reread`, `persisted-output-dump` |
+| Claude Code agent tooling (1M spawns) | dropped: no failure since 09-20 (Decision log) |
+| Working method | `work.*` (ADR-0022/0023/0028), `/plan-review`, `work.human-decisions-offer-options` |
+| Relais routing | `relais:relais` skill; index line (say which path) |
+| Security, Communication style | index lines |
+
+## Implementation review
+Phase 2, round 1: approve-with-changes (55k tokens, 71 s). Fixed: the web/UI
+item now states its fact (real browser; exact view before and after); the
+tool-flavor facts are back; the `amont-fleet` line no longer implies a
+permission; the never-echo wording is kept; the Reading-files heading keeps
+"overrides the bypass-mode default"; the journal check and owner map are
+recorded.
 
 ## Outcome
 
