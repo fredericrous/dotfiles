@@ -95,7 +95,7 @@ shows whether any guardrail weakened.
 - Budget: ≤ 8,192 bytes and ≤ 80 lines.
 
 ## Phases
-- [ ] Phase 1 — baseline, before any edit: from
+- [x] Phase 1 — baseline, before any edit: from
   `~/.claude/amont-agent/journal.log` (7 days) and the transcripts' tool-use
   count, record per-1,000 firing rates for the rules whose prose is cut:
   `bare-stash-pop`, `worktree-isolation`, `git-add-broad`,
@@ -146,6 +146,36 @@ shows whether any guardrail weakened.
   new index (no truncation notice).
 - Phase 4: the before/after rate table, and the follow-up PR if a rule
   doubled.
+
+## Observed
+
+### Phase 1 — baseline (2026-10-14 09:39, before any edit)
+`python3 2026-10-14-always-on-text-becomes-an-index.rates.py <ids>` (the
+script beside this plan). Window: the journal's whole span (it keeps 7 days),
+from each rule's last stance change inside it; no stance changed inside the
+span, so every window starts 10-07 09:39 (`file-reread` was already deny).
+Denominator: tool calls in transcripts over the same window. "Fires" counts
+journal lines whose stance column is observe, advise or deny; `unconfirmed`
+lines (matched, then refused by the rule's confirm step) are not firings.
+Every id is an amont-agent rule (`amont-agent rules --json`).
+
+| rule | stance now | window from | fires | tool calls | per 1,000 |
+|---|---|---|---|---|---|
+| `bare-stash-pop` | deny | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `worktree-isolation` | observe | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `git-add-broad` | observe | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `release-tag-push` | observe | 10-07 09:39 | 3 | 23364 | 0.13 |
+| `tag-after-commit` | advise | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `pipe-to-tail` | deny | 10-07 09:39 | 2 | 23364 | 0.09 |
+| `equals-separator` | deny | 10-07 09:39 | 3 | 23364 | 0.13 |
+| `glob-in-flag-value` | deny | 10-07 09:39 | 8 | 23364 | 0.34 |
+| `file-reread` | deny | 10-07 09:39 | 2 | 23364 | 0.09 |
+| `whole-file-dump` | advise | 10-07 09:39 | 13 | 23364 | 0.56 |
+| `read-unbounded-large` | advise | 10-07 09:39 | 3 | 23364 | 0.13 |
+| `gh-pr-merge-auto` | deny | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `no-verify` | deny | 10-07 09:39 | 0 | 23364 | 0.00 |
+| `implementation-review` | deny | 10-07 09:39 | 4 | 23364 | 0.17 |
+| `plan-review-panel` | deny | 10-07 09:39 | 5 | 23364 | 0.21 |
 
 ## Outcome
 
