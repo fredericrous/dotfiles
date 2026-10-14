@@ -1,7 +1,7 @@
 ---
 canonical: decisions:docs/plans/2026-10-13-agent-guidance-follows-writing-for-agents.md
 phases: [3]
-status: active
+status: done
 ---
 Part of [Agent guidance follows writing-for-agents](https://github.com/fredericrous/decisions/blob/main/docs/plans/2026-10-13-agent-guidance-follows-writing-for-agents.md).
 
