@@ -107,12 +107,12 @@ shows whether any guardrail weakened.
   where it is measured instead); each rate counts only from that rule's last
   stance change (`file-reread` deny since 10-11 12:10Z), and the table
   records stance, window, raw count and denominator. Saved in the plan.
-- [ ] Phase 2 — dotfiles: rewrite `dot_claude/CLAUDE.md.tmpl` from the
+- [x] Phase 2 — dotfiles: rewrite `dot_claude/CLAUDE.md.tmpl` from the
   coverage map; in the same PR replace the `gwt-stash-save`/`gwt-stash-pop`
   advice at `dot_claude/skills/worktree-task/SKILL.md:347` with the new stash
   fact; `make check`; one PR, merged on green; `chezmoi apply
   ~/.claude/CLAUDE.md` only.
-- [ ] Phase 3 — MEMORY.md: backup, status-token script, rewrite, hub lines
+- [x] Phase 3 — MEMORY.md: backup, status-token script, rewrite, hub lines
   for orphans and moved items, reachability check.
 - [ ] Phase 4 — 2026-10-21: recompute the Phase 1 rates over the 7 days
   after the switch. A rule whose rate at least doubles (and fires ≥ 5
@@ -212,6 +212,24 @@ Every id is an amont-agent rule (`amont-agent rules --json`).
 | Working method | `work.*` (ADR-0022/0023/0028), `/plan-review`, `work.human-decisions-offer-options` |
 | Relais routing | `relais:relais` skill; index line (say which path) |
 | Security, Communication style | index lines |
+
+### Phase 2 — live
+- dotfiles #38 merged (49eb7b1); `chezmoi apply ~/.claude/CLAUDE.md`: 4,899
+  bytes, `chezmoi diff` empty.
+
+### Phase 3 — MEMORY.md (2026-10-14, local)
+- Backup `~/.claude/backups/MEMORY.md.2026-10-14`, sha256 f8ea4287…; the
+  re-hash just before the write matched (no other session wrote meanwhile).
+- Status tokens: 7 tokens in 5 files were missing from their target files;
+  each file got its old index line under `## Status (from the index,
+  2026-10-14)`; a re-run reports 0 missing.
+- Hubs: 45 index lines that the new index drops were appended whole to their
+  section's hub, and the 63 orphan memories got a hub line, each under
+  `## Moved from the index (2026-10-14)`. `index_tooling.md`'s
+  `SEMANTICS.md` mention now names the aval repo.
+- New MEMORY.md: 23,325 → 7,856 bytes, 150 → 80 lines, longest line 149.
+  Reachability over 515 files: 0 broken links, 0 orphans, 0 links of the
+  backup dropped.
 
 ## Implementation review
 Phase 2, round 1: approve-with-changes (55k tokens, 71 s). Fixed: the web/UI
