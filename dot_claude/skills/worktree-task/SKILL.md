@@ -225,13 +225,15 @@ below names one of them.
   after one `cd <worktree> &&`), in the foreground. Exit 0 is the proof:
   the remote branch is the sha it pushed. Exit 4 means the remote accepted
   the push but shows another sha: read `remote_after` before anything else.
-  1 is refused, 3 unreachable or unverified. The push guards judge a land
-  as they judge a `git push`, but only in that shape; any other is held.
-  Where `amont --version` is below 1.54 or `amont-agent --version` below
-  2.41 (the guards would not see the land), push as before:
-  `git push -u origin <branch>` bare, confirmed with
-  `git ls-remote origin refs/heads/<branch>`. Then open ONE pull request
-  whose body carries the verification record.
+  1 is refused. 3 is unreachable (nothing pushed) or unverified (the push
+  was accepted but could not be read back): run the `git ls-remote` that
+  land prints before landing again. The push guards judge a land as they
+  judge a `git push`, but only in that shape; any other shape is held
+  under deny. Where amont or amont-agent is missing, or `amont --version`
+  is below 1.54 or `amont-agent --version` below 2.41 (the guards would not
+  see the land), push as before: `git push -u origin <branch>` bare,
+  confirmed with `git ls-remote origin refs/heads/<branch>`. Then open ONE
+  pull request whose body carries the verification record.
 - **F7. UI push** (the push carries interface changes in a repository with a
   user interface; fleet ADR-0028, `work.preview-unless-planned-evidence`,
   `work.preview-is-guided`). The person works
@@ -312,8 +314,8 @@ below names one of them.
   `merge-after:` line, and the report says what it waits for. Never cut the
   release yourself (`work.release-on-request`).
 - **F10. Teardown: required, and the finish is not done without it.** Run it
-  after the merge in F9, or once the push succeeds (`amont land` exit 0, or
-  `git ls-remote` after a `git push`) for a PR that F9 left open. It is never "cleanup for
+  after the merge in F9, or once the push succeeds (`amont land` exit 0,
+  or `git ls-remote` after a `git push`) for a PR that F9 left open. It is never "cleanup for
   later": skipping it has left merged worktrees behind.
   1. Remove this worktree from the **primary** checkout (not from inside
      itself), using `git -C` so no `cd` persists:
