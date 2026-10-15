@@ -200,6 +200,51 @@ backend alone re-runs on it.
 Whatever stays unresolved goes to the person as a 👉 decision, with both
 positions stated. It never becomes another round.
 
+## 6b. Final review: Codex
+
+After the panel's last round, one review by Codex, a model from another
+vendor, reads the body the panel accepted. It runs once per plan, and never
+on a step 8 delta.
+
+1. Post: `📍 <project>: final review by Codex, about 2–4 min.`
+2. Write the prompt to `<scratch>/codex-prompt.md`, in this order:
+   - "You are in Plan mode: read only. Do not create, edit or delete any
+     file, and run no command with side effects (no install, build, commit
+     or push).";
+   - the shared brief from step 2;
+   - the plan's path;
+   - each panel finding, one line with its disposition from step 4;
+   - "Review the plan as a staff engineer. Report what the panel missed or
+     got wrong; do not repeat its findings.";
+   - the `## Output` section of `~/.claude/agents/plan-review-backend.md`,
+     verbatim.
+3. Run it in the foreground, bare, with no pipe:
+
+   ```sh
+   timeout 1800 codex --no-daemon exec \
+     --dangerously-bypass-approvals-and-sandbox --ephemeral \
+     -C <repo> -c model_reasoning_effort="high" \
+     -o <scratch>/codex-review.md - < <scratch>/codex-prompt.md
+   ```
+
+   `--no-daemon` goes before `exec`; `exec` refuses it. `codex exec` has
+   no Plan mode switch, so the first prompt line is the only thing that
+   keeps it read only. The timeout comes from the Codex history on
+   2026-10-15: 133 plan reviews at medium effort took 99 s at the median,
+   218 s at p95 and 453 s at most, and one stalled for 96 min with no event.
+   1800 s is twice the longest run, doubled for high effort.
+4. Done when exit is 0 and `codex-review.md` has a `Verdict:` line. Any
+   other result is relaunched once. If it fails again, the review section
+   says `⚠ codex: <exit or reason>`, and the plan goes on: Codex never
+   blocks it.
+5. Run `git -C <repo> status --short`. A change Codex made is reported to
+   the person and never kept.
+6. Treat its findings as round 2 does: only a `high` or blocking one changes
+   the body. Apply it with `plan-apply`, `role: "codex"`, and its patch
+   copied from `codex-review.md` as the `patch` object. Then
+   `plan-review-backend` alone re-runs, because the edit made it stale.
+   Every other finding is `carried into implementation`.
+
 ## 7. Write the results
 
 Writing these never changes the body's sha, so the reviews stay bound.
@@ -212,16 +257,16 @@ Writing these never changes the body's sha, so the reviews stay bound.
   2. `👉 **Decide:** <what the person must decide>`, or
      `none — approve if <the one-line bet>`;
   3. `📍 <repositories> · <where the work stands> · next: <one action>. Panel: <roles>.`,
-     each role with the model it ran on, for example
-     `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend (fable-5-1), tui (sonnet-5-5).`;
+     each role with the model it ran on, and Codex last, for example
+     `📍 dotfiles · Phases 1–3 shipped · next: the nine agent files. Panel: backend (fable-5-1), tui (sonnet-5-5), codex (gpt-6-astra).`;
   4. `**Changed by review:**` up to 3 items;
   5. `**Verdicts:**` the counts per verdict, any delta rework that went
      to the person, and the count of findings `carried into
      implementation` (listed in the full reviews). Token counts and
      timings go in the full reviews, not here.
 - **`## Full reviews (reference)`** as the last heading: each reviewer's
-  verdict, findings, tokens and wall time, as a plain section with no
-  `<details>`.
+  verdict, findings, tokens and wall time, Codex's included, as a plain
+  section with no `<details>`.
 - **The machine comment** as the last line:
   `<!-- panel: repos=… adds=… reviewers=<roles> body-sha=<plan-sha --short> -->`.
 
