@@ -1,0 +1,43 @@
+schema_version = 1
+
+# Profiles the router selects among. Explicit model IDs keep policies
+# reproducible; the effective model is recorded on every dispatch.
+[models.research]
+id = "haiku"
+
+[models.implementation]
+id = "sonnet"
+effort = "medium"
+
+[models.escalation]
+id = "fable"
+effort = "medium"
+
+[execution]
+max_attempts = 3
+max_repairs_before_escalation = 1
+max_wall_seconds = 1200
+allow_nested_agents = true
+max_agent_depth = 3
+max_agents_total = 24
+
+# How much context one worker prompt may carry: objective, acceptance
+# criteria, architectural constraints and entry points together. A task
+# whose package does not fit is a sizing problem — split it — and never a
+# silently truncated prompt (SPEC §7). This is executable authority: it
+# is hashed into the trust grant, so raising it is reviewed.
+# [context]
+# budget_bytes = 65536
+
+# Proposed by `relais init --detect` from this repository's files.
+# Nothing here runs until a person grants trust for it.
+# required blocks execution when missing; optional gaps are reported.
+[integrations]
+aval = "optional"
+amont = "required"
+amont_agent = "optional"
+
+# Makefile: target check
+[[verification.profiles.default.commands]]
+argv = ["make", "check"]
+timeout_seconds = 300
