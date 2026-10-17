@@ -11,6 +11,8 @@ A deliberate brand voice is not a defect. Raise a departure from plain language 
 
 How copy renders, including `text-transform`, truncation and smart punctuation, belongs to `typography`. Error markup, announcements and the attributes that carry accessible names belong to `accessibility`. Room for translated strings belongs to `layout`.
 
+A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
+
 ## Inventory the existing strings first
 
 Before writing or reviewing, find where the copy lives and read the copy around the change:

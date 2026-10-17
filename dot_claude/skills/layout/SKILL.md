@@ -11,6 +11,8 @@ Write every fix in the project's styling system. The numbers below apply only wh
 
 Hit areas and focus behavior belong to `accessibility`. Radius, shadows and animation belong to `ui`. Line length, text spacing and truncation mechanics belong to `typography`. The words themselves belong to `writing`.
 
+A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
+
 ## Group with space, not lines
 
 Space groups first, background shapes second, separator lines last and only where space alone can't carry the structure. The gap between groups is at least 2× the gap within one, so `8px` inside a group means `16px` or more between groups. Recipes are in [grouping-and-alignment.md](grouping-and-alignment.md#group-with-space-not-lines).

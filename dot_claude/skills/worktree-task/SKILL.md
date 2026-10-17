@@ -183,6 +183,20 @@ below names one of them.
      - the active constraints: `aval rules --level constraint`, run in
        the worktree (the pack refreshed at Start);
      - the plan's Non-goals.
+  2b. **Interface review** (advisory; skipped unless the diff touches the
+     repository's UI). Trigger: the `ui` areas from `aval traits`, matched
+     against `git diff --name-only <base>..HEAD`; no match, no step. Build
+     one brief for the `interface-review` agent: the base sha, the scope
+     block, the `aval traits` output, the `aval resolve` output for the ui
+     and design-system keys at the diff's scope (with the exemption list of
+     `design-system.every-measure-is-a-token`), the full diff (no 60 KB cut)
+     and the removed lines of `git diff -U0 <base>..HEAD`. Launch it in
+     parallel with `implementation-review` (step 3). Findings are advisory:
+     each is fixed or recorded `deliberate: <reason>` under a separate
+     `## Interface review` section of the plan. There is no hook gate, no
+     Overrule question and no Delta round of its own. Interface fixes land
+     before the closing commit; a fix that changes code returns to F1, and
+     the implementation-review pass on the new tree is its Delta.
   3. Launch the `implementation-review` agent once, in the foreground,
      with, in order: the block line verbatim; `Round 1.`; the brief;
      "Read the plan and the diff. Open at most 10 more files or 1,500

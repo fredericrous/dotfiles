@@ -11,6 +11,8 @@ Orchestration is all it owns. Accessibility rules belong to `accessibility`, str
 
 Change-scoped review of uncommitted work, branches and pull requests belongs to `interface-review`.
 
+A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
+
 ## Evidence, not taste
 
 Press hard on the escalation triggers and leave deliberate project choices alone. A trigger is a failure whatever the style guide says. A density, radius or voice you merely disagree with is not a finding.
@@ -39,7 +41,7 @@ Identify the framework, styling system, component library, design tokens, suppor
 
 Then read what the project has written about its own interface: `CONTRIBUTING.md`, `CODING_STANDARDS.md`, `AGENTS.md`, `CLAUDE.md`, a design-system doc, Storybook docs and interface ADRs. Name which you found, or that there are none.
 
-A documented convention settles matters of taste but never excuses a trigger or a domain rule violation. What it changes is **where** you report. When a guideline or shared token is the cause, report it once against that source, with the components as its locations.
+A documented convention settles matters of taste but never excuses a trigger or a domain rule violation, unless an applicable repository decision (resolved with `aval resolve`) settles it. What it changes is **where** you report. When a guideline or shared token is the cause, report it once against that source, with the components as its locations.
 
 ### 4. Use domain skills as the sources of truth
 
@@ -54,7 +56,9 @@ Load every owning skill below and complete each domain review before consolidati
 
 From each, take its principles, its references and its verification checks. Its severity ladder and its format are for standalone use; the ones in this file replace them.
 
-If an owning skill is unavailable, mark that domain `Not reviewed`, name it and continue with the rest. Do not recreate its rules from memory, substitute a neighbour or claim holistic coverage.
+Load `colors`, `typography` and `ui` as project skills (`.claude/skills/<name>/`) or else through `duro_ds_lookup guide:<name>` when the `duro-ds` MCP is present. Always load `motion-design`; where `ui` is absent, use it to review action feedback (ADR-0014, fleet scope).
+
+If an owning skill is unavailable by every route above, mark that domain `Not reviewed`, name it and continue with the rest. Do not recreate its rules from memory, substitute a neighbour or claim holistic coverage.
 
 When two skills appear to cover one issue, assign it to the owner of the underlying rule and note secondary effects in the **Why** cell.
 

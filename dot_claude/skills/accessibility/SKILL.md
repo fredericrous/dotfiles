@@ -9,7 +9,9 @@ This skill reviews and fixes semantics, keyboard and focus behavior, accessible 
 
 Reviewing means two walks. Keyboard-only, where every flow completes without a mouse. Then screen-reader, where every control announces a name, a role and its state. When unsure, take the platform default over a custom rebuild, and remove ARIA rather than add it.
 
-Contrast measurement and color fixes belong to `colors`. Text sizing, iOS input zoom and language metadata belong to `typography`. Spacing between targets and spatial RTL belong to `layout`. Label, error and alt-text wording belong to `writing`. Animation recipes, hover styling and scroll containment belong to `ui`.
+Contrast measurement and color fixes belong to `colors`; where `colors` is absent, compute the declared pair's ratio against the table below and mark pairs over a rendered background `Not verified`. Text sizing, iOS input zoom and language metadata belong to `typography`. Spacing between targets and spatial RTL belong to `layout`. Label, error and alt-text wording belong to `writing`. Animation recipes, hover styling and scroll containment belong to `ui`.
+
+A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
 
 ## Criteria, not conventions
 
@@ -77,7 +79,7 @@ This skill decides which contrast requirement applies:
 | 1.4.3 AA | Large text, at least `24px` or `18.67px` bold | 3:1 |
 | 1.4.11 AA | UI component boundaries, states and meaningful graphics | 3:1 |
 
-Inactive controls and logos are exempt. Use `colors` to measure the rendered pair. When it fails, report the pair and the criterion it misses, and leave the colors alone unless asked.
+Inactive controls and logos are exempt. Use `colors` to measure the rendered pair; where `colors` is absent, compute the declared pair's ratio against this table and mark a pair over a rendered background `Not verified`. When it fails, report the pair and the criterion it misses, and leave the colors alone unless asked.
 
 ## Honor prefers-reduced-motion
 
@@ -103,7 +105,7 @@ Use headings that describe their sections and form a coherent outline. Expose on
 
 ## Survive zoom and text resize
 
-Text must survive 200% resize (1.4.4), and the page must reflow at 320px width without horizontal scrolling (1.4.10). Text containers take `min-height`, not `height`, and `layout` owns the rest of that fix. Never set `maximum-scale=1` or `user-scalable=no` in the viewport meta. iOS input zoom is fixed with `typography`'s `16px` rule instead.
+Text must survive 200% resize (1.4.4), and the page must reflow at 320px width without horizontal scrolling (1.4.10). Text containers take `min-height`, not `height`, and `layout` owns the rest of that fix. Never set `maximum-scale=1` or `user-scalable=no` in the viewport meta. iOS input zoom is fixed with `typography`'s `16px` rule instead; where `typography` is absent, set input font size to at least `16px` here.
 
 ## Before you finish
 

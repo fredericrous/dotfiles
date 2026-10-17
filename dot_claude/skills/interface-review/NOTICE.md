@@ -4,7 +4,7 @@ This skill is copied from `interface-review/` in
 https://github.com/jakubkrehel/skills, at commit
 `4c66b1fa86e9ab70187b43d7da9b6fdb29f2ef63` (fetched 2026-10-16).
 
-Local edits: the `better-` prefix is dropped from references to other skills (done by `scripts/fork-interface-skills.sh`), and `agents/openai.yaml` is not copied.
+Local edits: the `better-` prefix is dropped from references to other skills (done by `scripts/fork-interface-skills.sh`), and `agents/openai.yaml` is not copied. A precedence block is added after the intro: a decision of this repository outranks a value in this skill.
 
 Updating: diff the upstream path from the pinned commit above, have a frontier
 model port the changes over the local edits, then bump the pinned commit.

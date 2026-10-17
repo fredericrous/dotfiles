@@ -4,7 +4,7 @@ This skill is copied from `better-interface/` in
 https://github.com/jakubkrehel/skills, at commit
 `4c66b1fa86e9ab70187b43d7da9b6fdb29f2ef63` (fetched 2026-10-16).
 
-Local edits: the `better-` prefix is dropped from the skill name, the `name:` line and the cross-references (done by `scripts/fork-interface-skills.sh`), and `agents/openai.yaml` is not copied.
+Local edits: the `better-` prefix is dropped from the skill name, the `name:` line and the cross-references (done by `scripts/fork-interface-skills.sh`), and `agents/openai.yaml` is not copied. A precedence block is added after the intro: a decision of this repository outranks a value in this skill. The clause that a documented convention never excuses a domain rule violation is reconciled so an applicable repository decision settles it; `colors`, `typography` and `ui` load as project skills or else through `duro_ds_lookup guide:<name>` when the `duro-ds` MCP is present, else are marked `Not reviewed`; `motion-design` is always loaded and reviews ADR-0014 action feedback where `ui` is absent.
 
 Updating: diff the upstream path from the pinned commit above, have a frontier
 model port the changes over the local edits, then bump the pinned commit.
