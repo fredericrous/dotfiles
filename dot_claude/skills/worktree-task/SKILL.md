@@ -191,7 +191,8 @@ below names one of them.
      and design-system keys at the diff's scope (with the exemption list of
      `design-system.every-measure-is-a-token`), the full diff (no 60 KB cut)
      and the removed lines of `git diff -U0 <base>..HEAD`. Launch it in
-     parallel with `implementation-review` (step 3). Findings are advisory:
+     the same message as step 3's `implementation-review` launch, so the
+     two run in parallel. Findings are advisory:
      each is fixed or recorded `deliberate: <reason>` under a separate
      `## Interface review` section of the plan. There is no hook gate, no
      Overrule question and no Delta round of its own. Interface fixes land

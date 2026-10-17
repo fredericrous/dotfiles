@@ -49,7 +49,7 @@ for name in "$@"; do
   b_new_star=$(count 'the interface skills' "$out")
   b_new_prefix=$(count "the owning skill's name" "$out")
 
-  find "$out" -type f -name '*.md' ! -name NOTICE.md | while IFS= read -r f; do
+  while IFS= read -r -d '' f; do
     tmp=$(mktemp)
     sed -E \
       -e 's/the `better-\*` skills/the interface skills/g' \
@@ -61,7 +61,7 @@ for name in "$@"; do
       "$f" >"$tmp"
     cat "$tmp" >"$f"
     rm -f "$tmp"
-  done
+  done < <(find "$out" -type f -name '*.md' ! -name NOTICE.md -print0)
 
   [ "$(count "$P_STAR" "$out")" = 0 ] || die "$name: better-* rewrite incomplete"
   [ "$(count 'the interface skills' "$out")" = "$((b_new_star + b_star))" ] ||
