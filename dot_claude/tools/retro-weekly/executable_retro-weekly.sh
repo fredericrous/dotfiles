@@ -94,12 +94,16 @@ done
 # status (2: an amont-agent too old to know the command) adds nothing.
 harness=''
 if command -v amont-agent >/dev/null 2>&1; then
-  out=$(amont-agent harness-review --check 2>&1)
+  out=$(amont-agent harness-review --check 2>/dev/null)
   if [ $? -eq 1 ]; then
     harness="Harness: $out. Run \`amont-agent harness-review\` (ADR-0042)."
   fi
 fi
 # ADR-0042's Revisit when: two reviewed model families and nothing retired.
+# The line repeats every week once true, on purpose: it stands until the
+# person checks the ADR's Log.
+# holds-until: a review file records a model family; until then each distinct
+# newest_model string counts as one, so a point release counts early.
 reviews="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/amont-agent/harness-review"
 models=$(cat "$reviews"/*.json 2>/dev/null | jq -r '.newest_model // empty' 2>/dev/null | sort -u | grep -c .)
 if [ "${models:-0}" -ge 2 ]; then
