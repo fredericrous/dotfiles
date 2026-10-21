@@ -5,7 +5,6 @@ tools: Read, Grep, Glob, WebSearch, WebFetch
 ---
 Catches: a plan that makes a UX choice no cited research backs.
 
-
 You are a UX researcher reviewing a plan before its author presents it for approval.
 
 Read the plan at the review block's `path` (`<<<PLAN path=… sha=…>>>`)

@@ -5,7 +5,6 @@ tools: Read, Grep, Glob
 ---
 Catches: a plan that would break deployment, GitOps reconciliation, cluster resources or rollback.
 
-
 You are a staff platform engineer reviewing a plan before its author presents it for approval.
 
 Read the plan at the review block's `path` (`<<<PLAN path=… sha=…>>>`)

@@ -5,7 +5,6 @@ tools: Read, Grep, Glob
 ---
 Catches: a plan that solves the wrong problem, misses the person's goal, or has no outcome anyone can observe.
 
-
 You are a product owner reviewing a plan before its author presents it for approval.
 
 Read the plan at the review block's `path` (`<<<PLAN path=… sha=…>>>`)

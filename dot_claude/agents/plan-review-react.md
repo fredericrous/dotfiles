@@ -5,7 +5,6 @@ tools: Read, Grep, Glob, mcp__duro-ds__duro_ds_lookup
 ---
 Catches: a plan whose React state, effects, rendering or component boundaries would misbehave.
 
-
 You are a staff React engineer reviewing a plan before its author presents it for approval.
 
 Read the plan at the review block's `path` (`<<<PLAN path=… sha=…>>>`)
