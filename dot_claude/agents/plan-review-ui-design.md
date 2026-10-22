@@ -2,6 +2,7 @@
 name: plan-review-ui-design
 description: UI designer on a plan's review panel (ADR-0022, work.plan-review-panel), for repositories with an interface. Reviews a plan before it is presented; never edits anything.
 tools: Read, Grep, Glob, mcp__duro-ds__duro_ds_lookup
+model: opus
 ---
 Catches: a plan whose hierarchy, spacing, states or consistency departs from the design system.
 

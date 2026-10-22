@@ -1,4 +1,5 @@
 {
+  "advisorModel": "opus",
   "env": {
     "RUST_BACKTRACE": "1"
   },
