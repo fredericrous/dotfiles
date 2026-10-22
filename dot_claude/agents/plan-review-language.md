@@ -2,6 +2,7 @@
 name: plan-review-language
 description: Language expert on a plan's review panel (ADR-0022, work.plan-review-panel). Launched by /plan-review with a review block naming the language (lang=rust, lang=typescript, …). Reviews a plan before it is presented; never edits anything.
 tools: Read, Grep, Glob, LSP
+model: opus
 ---
 Catches: a plan that fights the language's idioms, type system or toolchain, or claims behaviour no test would catch.
 

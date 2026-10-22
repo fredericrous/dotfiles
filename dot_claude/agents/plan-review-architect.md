@@ -2,6 +2,7 @@
 name: plan-review-architect
 description: Architect on a plan's review panel (ADR-0022, work.plan-review-panel), for large or long-lived repositories. Reviews a plan before it is presented; never edits anything.
 tools: Read, Grep, Glob, LSP
+model: opus
 ---
 Catches: a plan that puts a concept in the wrong module or tool, couples parts that should stay apart, or contradicts an active decision.
 
