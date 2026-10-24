@@ -29,10 +29,13 @@ says, on the relais branch (55 code rules in full, other constraints,
   `run_aval` call in `crates/relais/src/context/mod.rs` → blocking finding
   citing `reliability.every-wait-is-bounded` at the old-side line →
   `Verdict: rework`, blocking, `context/mod.rs:219` (the deleted line).
-- Both drills ran on the live agent as patched before `04ee438` (verdict
-  wording); under that wording a rename is a blocking finding under
-  `approve-with-changes`. The blocking finding and rule id are what Phase 4
-  asks for, and both drills show them.
+- What the drills prove: the new brief (code rules in full, decisions for the
+  changed files) yields blocking findings citing the right rule id at the right
+  line. What they do not prove: which agent text the subagent ran. The live
+  file already held `04ee438` (verdict wording), yet the rename drill answered
+  `rework` where that wording says a blocking finding under
+  `approve-with-changes`; Claude Code may load agent definitions at session
+  start, so the next session's first review is the check of the new wording.
 - The brief's commands → `aval --json rules --level constraint --governs code
   --full` 55 rules; `aval relevant --json --top 20` 18 ranked keys.
 
