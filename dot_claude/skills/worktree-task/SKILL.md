@@ -173,22 +173,26 @@ below names one of them.
   `implementation-review` hook checks at the push that it happened for
   the tree being pushed, so run it after F4, on the committed tree:
   1. Post `📍 <project>: implementation review, round 1, about 2 min.`
-  2. Get the block: `amont-agent tree-sha --block` (the canonical tree,
-     `HEAD` without `docs/plans/`; a worktree named after its task still
-     says the repository's name). Build the brief once:
-     - the landed plan's path, and its Verification section verbatim;
-     - `git diff origin/main...HEAD --stat -- . ':!docs/plans'`, and the
-       full diff when it is under 60 KB; above that, the stat and "Read
-       the files";
-     - the code rules in full: `aval --json rules --level constraint
-       --governs code --full`; the other constraints: `aval rules --level
-       constraint`; and the decisions that apply: `aval relevant --json
-       --top 20` with one `--path` per file of `git diff --name-only
-       origin/main...HEAD` (not `--changed`, which is empty on a committed
-       branch; skipped when no file changed), each returned key resolved
-       with `aval resolve <key>`; all run in the worktree (the pack
-       refreshed at Start);
+  2. Build the brief with one command, in the worktree (the pack refreshed
+     at Start), never by hand (ADR-0044: a hand-built brief once carried
+     rule statements only, and the reviewer passed a placeholder name):
+     ```bash
+     amont-agent review-brief --plan <landed plan> > <scratch>/brief.md
+     ```
+     It prints, in order:
+     - the `<<<TREE repo=… sha=…>>>` block (the same as `tree-sha --block`:
+       `HEAD` without `docs/plans/`) and a `<<<RULES sha=…>>>` line;
+     - the plan's Verification section;
+     - the diff stat, and the full diff under 60 KB;
+     - the code rules in full;
+     - the constraint index;
+     - the decisions that apply to the changed paths, each resolved;
      - the plan's Non-goals.
+
+     For a pointer plan, pass the canonical plan's path. The merge-base is
+     the remote's default branch; pass `--base <ref>` for a stacked branch.
+     Exit 3 means aval failed and nothing was printed; fix aval, never
+     hand-build the brief instead.
   2b. **Interface review** (advisory; skipped unless the diff touches the
      repository's UI). Trigger: the `ui` areas from `aval traits`, matched
      against `git diff --name-only <base>..HEAD`; no match, no step. Build
@@ -205,7 +209,10 @@ below names one of them.
      before the closing commit; a fix that changes code returns to F1, and
      the implementation-review pass on the new tree is its Delta.
   3. Launch the `implementation-review` agent once, in the foreground,
-     with, in order: the block line verbatim; `Round 1.`; the brief;
+     with, in order: the TREE line verbatim; `Round 1.`; the RULES line
+     verbatim (the push check journals a review whose prompt lacks it, or
+     carries a stale one); the brief, inline or as its path with "read it
+     in full";
      "Read the plan and the diff. Open at most 10 more files or 1,500
      lines. Follow your output contract." A background launch counts only
      after its completion notification.
