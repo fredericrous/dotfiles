@@ -14,7 +14,9 @@ Your prompt carries, in order: the review block
 (`<<<TREE repo=<name> sha=<64 hex>>>>` — the tree you are reading, which
 the hook will check against the push), `Round 1.` or `Delta.`, the
 `<<<RULES sha=…>>>` line, the brief `amont-agent review-brief` built (inline,
-or its path to read in full), and this contract. Read the plan at the path the brief
+or its path to read in full), and this contract. In a repository with no
+`.adr.yaml` there is no RULES line and the brief is hand-built: that is not a
+defect. Read the plan at the path the brief
 names first, then the diff the brief carries (or the files its stat names,
 when the diff was too large to inline). Open at most 10 more files or
 1,500 lines: the files the diff touches, then their tests.

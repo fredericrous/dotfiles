@@ -191,8 +191,10 @@ below names one of them.
 
      For a pointer plan, pass the canonical plan's path. The merge-base is
      the remote's default branch; pass `--base <ref>` for a stacked branch.
-     Exit 3 means aval failed and nothing was printed; fix aval, never
-     hand-build the brief instead. One exception, until review-brief
+     Exit 1 means the repository or its base could not be read: pass
+     `--base <ref>` (a stacked or local-only branch). Exit 3 means aval
+     failed and nothing was printed; fix aval, never hand-build the brief
+     instead. One exception, until review-brief
      handles it: a repository with no `.adr.yaml` has no decided code
      rules, and aval exits 3 there. Build that brief by hand from the
      parts above, with no rules section and no RULES line.
@@ -215,7 +217,7 @@ below names one of them.
      with, in order: the TREE line verbatim; `Round 1.`; the RULES line
      verbatim (the push check journals a review whose prompt lacks it, or
      carries a stale one); the brief, inline or as its path with "read it
-     in full";
+     in full" (an inline brief repeats both lines at its top; leave them);
      "Read the plan and the diff. Open at most 10 more files or 1,500
      lines. Follow your output contract." A background launch counts only
      after its completion notification.
@@ -234,7 +236,8 @@ below names one of them.
   6. `approve`, or `approve-with-changes` with every finding fixed or
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
-     for the new tree, `Delta.`, the round-1 findings, the diff since,
+     for the new tree, `Delta.`, the RULES line from a fresh
+     `review-brief`, the round-1 findings, the diff since,
      "answer resolved / not resolved / new blocker for each". The Delta may
      resume the same reviewer with `SendMessage` (the block first in the
      message) instead of a fresh launch: the hook counts a resumed round on
