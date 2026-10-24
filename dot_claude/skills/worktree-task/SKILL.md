@@ -312,9 +312,15 @@ below names one of them.
      Its JSON prints `question_prefix` (`[preview <id>] <label>`): the
      question in step 6 starts with it, verbatim. A register that did not
      bind says so right after it runs; run the command it prints.
-  5. **Open the app for them** with Claude in Chrome: a tab at the URL,
-     already at the state step 1 of "Try it" reaches (for example the panel
-     already open). Say which tab it is.
+  5. **Open the app for them in their default browser**: `open '<url>'`
+     (macOS opener), with the URL deep-linked to the state step 1 of "Try
+     it" reaches where a route or query can carry it. Never open the
+     person's page with chrome-devtools MCP, Playwright or any headless or
+     automation Chrome: that window is the agent's, it lives in a separate
+     profile and the person does not see it, or sees it as a stray window.
+     Those tools are for the agent's own checks only. When the state needs
+     clicks a URL cannot carry, open the URL and let step 1 of "Try it" say
+     the click. Say what was opened.
   6. **Print the brief in the terminal**: the guide's sections, short. Then,
      in the SAME turn, ask ONE marked question with AskUserQuestion:
      - its text begins with the register's `question_prefix`, verbatim,
