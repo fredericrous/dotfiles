@@ -180,8 +180,14 @@ below names one of them.
      - `git diff origin/main...HEAD --stat -- . ':!docs/plans'`, and the
        full diff when it is under 60 KB; above that, the stat and "Read
        the files";
-     - the active constraints: `aval rules --level constraint`, run in
-       the worktree (the pack refreshed at Start);
+     - the code rules in full: `aval --json rules --level constraint
+       --governs code --full`; the other constraints: `aval rules --level
+       constraint`; and the decisions that apply: `aval relevant --json
+       --top 20` with one `--path` per file of `git diff --name-only
+       origin/main...HEAD` (not `--changed`, which is empty on a committed
+       branch; skipped when no file changed), each returned key resolved
+       with `aval resolve <key>`; all run in the worktree (the pack
+       refreshed at Start);
      - the plan's Non-goals.
   2b. **Interface review** (advisory; skipped unless the diff touches the
      repository's UI). Trigger: the `ui` areas from `aval traits`, matched

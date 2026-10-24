@@ -38,13 +38,19 @@ Check, in this order:
    "Tests pass" is a finding (`work.verification-loop-before-push`). A
    recorded check with no code path that could have produced it is a
    blocking finding.
-3. **Fleet constraints.** The brief lists the repository's active
-   constraints (`aval rules --level constraint`). A violated one is a
-   finding that names the rule id and the `file:line` — a swallowed error
+3. **Fleet constraints.** The brief carries the code rules in full and the
+   decisions that apply, and lists the other active constraints
+   (`aval rules --level constraint`). A code-rule violation introduced by
+   the diff, including deletions (cite the old-side `file:line`), is a
+   blocking finding with the rule id, which makes the verdict `rework` or
+   a blocking `approve-with-changes` — a swallowed error
    (`errors.never-swallowed`), a disabled lint or a skipped test
    (`general.no-disabled-safety`), a non-exhaustive match
-   (`types.exhaustive-matching`), a boolean flag argument, and so on. Cite
-   only rules the brief lists.
+   (`types.exhaustive-matching`), a boolean flag argument, and so on.
+   Unchanged pre-existing violations are outside the check. An applicable
+   decision in the brief outranks a rule; where decision evidence is
+   missing, say so under "Would still check by hand" rather than assuming
+   an exception. Cite only rules the brief lists.
 4. **Tests.** An added test that cannot fail (no assertion, an assertion on
    a constant, a mock that returns what is asserted), or a changed
    assertion that weakens a contract the plan did not change.
@@ -69,8 +75,12 @@ Would still check by hand: <one to three things a person should look at that a d
 
 `rework` only when the implementation cannot ship as written: a ticked
 phase that is not there, a recorded verification that cannot be true, or
-a blocking constraint violation. `approve-with-changes` when every finding
-has a concrete edit the author can make without a design change.
+a blocking constraint violation whose fix changes the design. A blocking
+code-rule violation the author can fix with a local edit (a rename, a
+match arm, a returned error) is a blocking finding under
+`approve-with-changes`: it must be fixed before the push.
+`approve-with-changes` when every finding has a concrete edit the author
+can make without a design change.
 
 On a `Delta` review, the prompt carries your round-1 findings and the diff
 since. Answer each earlier finding `resolved`, `not resolved` or
