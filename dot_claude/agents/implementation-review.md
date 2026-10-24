@@ -75,8 +75,12 @@ Would still check by hand: <one to three things a person should look at that a d
 
 `rework` only when the implementation cannot ship as written: a ticked
 phase that is not there, a recorded verification that cannot be true, or
-a blocking constraint violation. `approve-with-changes` when every finding
-has a concrete edit the author can make without a design change.
+a blocking constraint violation whose fix changes the design. A blocking
+code-rule violation the author can fix with a local edit (a rename, a
+match arm, a returned error) is a blocking finding under
+`approve-with-changes`: it must be fixed before the push.
+`approve-with-changes` when every finding has a concrete edit the author
+can make without a design change.
 
 On a `Delta` review, the prompt carries your round-1 findings and the diff
 since. Answer each earlier finding `resolved`, `not resolved` or
