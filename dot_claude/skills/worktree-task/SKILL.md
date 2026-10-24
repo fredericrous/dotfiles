@@ -192,7 +192,10 @@ below names one of them.
      For a pointer plan, pass the canonical plan's path. The merge-base is
      the remote's default branch; pass `--base <ref>` for a stacked branch.
      Exit 3 means aval failed and nothing was printed; fix aval, never
-     hand-build the brief instead.
+     hand-build the brief instead. One exception, until review-brief
+     handles it: a repository with no `.adr.yaml` has no decided code
+     rules, and aval exits 3 there. Build that brief by hand from the
+     parts above, with no rules section and no RULES line.
   2b. **Interface review** (advisory; skipped unless the diff touches the
      repository's UI). Trigger: the `ui` areas from `aval traits`, matched
      against `git diff --name-only <base>..HEAD`; no match, no step. Build
