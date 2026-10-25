@@ -1,6 +1,6 @@
 ---
 canonical: decisions:docs/plans/2026-10-24-code-rules-reach-the-reviewer.md
-phases: [2]
+phases: [2, 4]
 status: done
 ---
 # Code rules reach the reviewer (pointer)
@@ -26,3 +26,30 @@ The `Candidates:` block (phase 4) comes in a later PR.
 - approve-with-changes, then approve-with-changes on the Delta. Fixed: the reviewer contract's no-corpus case, exit 1 named, the repeated lines kept, the Delta's fresh RULES line.
 - deliberate: the Delta step does not yet say "none in a repository with no `.adr.yaml`"; phase 4's dotfiles PR edits this same paragraph for the `Candidates:` block and adds it.
 - 41k + 44k tokens.
+
+## Phase 4
+
+This repository carries Phase 4's skill and agent edits:
+- F4b's brief lists the `<<<CANDIDATES …>>>` block that amont-agent 3.3.0 prints;
+- step 3 and the Delta paste that block verbatim into the reviewer's prompt, after the RULES line;
+- the implementation-review contract adds a `Candidates:` block ruling on every listed id, which the push check reads; the output word cap leaves that block out;
+- the no-corpus exception goes, since `review-brief` now handles a repository with no `.adr.yaml`.
+
+The Delta's "none in a repository with no `.adr.yaml`" note (Phase 2's deliberate) lands here.
+
+### Verification (phase 4)
+
+Input → expected → actual:
+- amont-agent#144's implementation reviewer, given the inline `<<<CANDIDATES … n=18>>>` block → a `Candidates:` block ruling on every listed id → 18/18 in round 1 and 18/18 in the delta (including the one new id), each `fine` with a quoted rule-body clause.
+- `amont-agent review-brief` 3.3.0 in this repository, which has no `.adr.yaml` → exit 0, no RULES line, a "no aval corpus" section, a CANDIDATES block → exit 0, as expected, `n=0`.
+
+A deployed Round-1 review whose `Candidates:` block the push check reads without a "left without a ruling" entry can only run after `chezmoi apply`, on the next code branch. It is recorded in the decisions PR that records phase 4.
+
+### Implementation review (phase 4)
+
+- approve-with-changes (4 findings), then approve on the Delta.
+- Fixed:
+  - the Delta always carries the CANDIDATES block, and only the RULES line is absent without a corpus;
+  - the contract no longer says the brief is "hand-built";
+  - step 3 asks for `Candidates:` only when the block lists an id.
+- 34k + 38k tokens.

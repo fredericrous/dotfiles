@@ -182,11 +182,16 @@ below names one of them.
      It prints, in order:
      - the `<<<TREE repo=… sha=…>>>` block (the same as `tree-sha --block`:
        `HEAD` without `docs/plans/`) and a `<<<RULES sha=…>>>` line;
+     - the `<<<CANDIDATES sha=… n=…>>>` block (amont-agent 3.3.0 and
+       adr-lint 0.3.0): one line per candidate line the diff adds, ending
+       `<<<END CANDIDATES>>>`, or `<<<CANDIDATES unavailable>>>` when adr-lint
+       could not run;
      - the plan's Verification section;
      - the diff stat, and the full diff under 60 KB;
      - the code rules in full;
      - the constraint index;
      - the decisions that apply to the changed paths, each resolved;
+     - a `## Candidates` section with each candidate's pattern and line;
      - the plan's Non-goals.
 
      For a pointer plan, pass the canonical plan's path. The merge-base is
@@ -194,10 +199,8 @@ below names one of them.
      Exit 1 means the repository or its base could not be read: pass
      `--base <ref>` (a stacked or local-only branch). Exit 3 means aval
      failed and nothing was printed; fix aval, never hand-build the brief
-     instead. One exception, until review-brief
-     handles it: a repository with no `.adr.yaml` has no decided code
-     rules, and aval exits 3 there. Build that brief by hand from the
-     parts above, with no rules section and no RULES line.
+     instead. A repository with no `.adr.yaml` has no decided code rules:
+     the brief says so and carries no RULES line (amont-agent 3.3.0).
   2b. **Interface review** (advisory; skipped unless the diff touches the
      repository's UI). Trigger: the `ui` areas from `aval traits`, matched
      against `git diff --name-only <base>..HEAD`; no match, no step. Build
@@ -216,8 +219,12 @@ below names one of them.
   3. Launch the `implementation-review` agent once, in the foreground,
      with, in order: the TREE line verbatim; `Round 1.`; the RULES line
      verbatim (the push check journals a review whose prompt lacks it, or
-     carries a stale one); the brief, inline or as its path with "read it
-     in full" (an inline brief repeats both lines at its top; leave them);
+     carries a stale one); the CANDIDATES block verbatim, from its first
+     line to `<<<END CANDIDATES>>>` (the push check reads the ids from the
+     prompt, not from a file); the brief, inline or as its path with "read
+     it in full" (an inline brief repeats these lines at its top; leave
+     them); when the block lists any id, "Your result must carry a
+     `Candidates:` block ruling on every listed id";
      "Read the plan and the diff. Open at most 10 more files or 1,500
      lines. Follow your output contract." A background launch counts only
      after its completion notification.
@@ -236,7 +243,8 @@ below names one of them.
   6. `approve`, or `approve-with-changes` with every finding fixed or
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
-     for the new tree, `Delta.`, the RULES line from a fresh
+     for the new tree, `Delta.`, the RULES line (absent in a repository
+     with no `.adr.yaml`) and the CANDIDATES block from a fresh
      `review-brief`, the round-1 findings, the diff since,
      "answer resolved / not resolved / new blocker for each". The Delta may
      resume the same reviewer with `SendMessage` (the block first in the
