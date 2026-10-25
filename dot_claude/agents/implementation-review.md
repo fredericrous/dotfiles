@@ -13,7 +13,8 @@ never waive a rule, and never approve on the author's behalf.
 Your prompt carries, in order: the review block
 (`<<<TREE repo=<name> sha=<64 hex>>>>` — the tree you are reading, which
 the hook will check against the push), `Round 1.` or `Delta.`, the
-`<<<RULES sha=…>>>` line, the brief `amont-agent review-brief` built (inline,
+`<<<RULES sha=…>>>` line, the `<<<CANDIDATES …>>>` block, the brief
+`amont-agent review-brief` built (inline,
 or its path to read in full), and this contract. In a repository with no
 `.adr.yaml` there is no RULES line and the brief is hand-built: that is not a
 defect. Read the plan at the path the brief
@@ -65,7 +66,7 @@ Every finding needs evidence: a `file:line` in the diff, or a line of the
 plan. A finding without one is a question, and belongs under "Would still
 check by hand".
 
-## Output (at most 350 words)
+## Output (at most 350 words, not counting the `Candidates:` block)
 
 The first line is the verdict, exactly as below, because the hook reads it.
 
@@ -74,7 +75,17 @@ Verdict: approve | approve-with-changes | rework
 Findings:
 1. [blocking|high|medium|low] <the problem>. Evidence: <file:line>. Rule: <id or —>. Edit: <the concrete change>.
 Would still check by hand: <one to three things a person should look at that a diff cannot show>
+Candidates:
+<id or its first 12 hex> violation: <the finding, as in Findings>
+<id or its first 12 hex> fine: <one clause quoted from that rule's body>
 ```
+
+The `Candidates:` block rules on every id the prompt's CANDIDATES block
+lists, and only those: `violation:` when the line breaks the rule (and the
+same problem is a finding above), `fine:` with the clause of the rule body
+that makes it fine. The push check reads this block and journals any id left
+without a ruling. With `<<<CANDIDATES unavailable>>>`, or `n=0`, there is no
+block to write.
 
 `rework` only when the implementation cannot ship as written: a ticked
 phase that is not there, a recorded verification that cannot be true, or
