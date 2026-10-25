@@ -223,8 +223,8 @@ below names one of them.
      line to `<<<END CANDIDATES>>>` (the push check reads the ids from the
      prompt, not from a file); the brief, inline or as its path with "read
      it in full" (an inline brief repeats these lines at its top; leave
-     them); "Your result must carry a `Candidates:` block ruling on every
-     listed id";
+     them); when the block lists any id, "Your result must carry a
+     `Candidates:` block ruling on every listed id";
      "Read the plan and the diff. Open at most 10 more files or 1,500
      lines. Follow your output contract." A background launch counts only
      after its completion notification.
@@ -243,9 +243,9 @@ below names one of them.
   6. `approve`, or `approve-with-changes` with every finding fixed or
      named deliberate: continue to F5. A fix that changes code returns to
      F1, and the **second** pass through F4b is the `Delta`: a fresh block
-     for the new tree, `Delta.`, the RULES line and the CANDIDATES block
-     from a fresh `review-brief` (none in a repository with no
-     `.adr.yaml`), the round-1 findings, the diff since,
+     for the new tree, `Delta.`, the RULES line (absent in a repository
+     with no `.adr.yaml`) and the CANDIDATES block from a fresh
+     `review-brief`, the round-1 findings, the diff since,
      "answer resolved / not resolved / new blocker for each". The Delta may
      resume the same reviewer with `SendMessage` (the block first in the
      message) instead of a fresh launch: the hook counts a resumed round on
