@@ -1,7 +1,7 @@
 ---
 canonical: decisions:docs/plans/2026-10-24-code-rules-reach-the-reviewer.md
-phases: [2]
-status: done
+phases: [2, 4]
+status: active
 ---
 # Code rules reach the reviewer (pointer)
 
@@ -26,3 +26,13 @@ The `Candidates:` block (phase 4) comes in a later PR.
 - approve-with-changes, then approve-with-changes on the Delta. Fixed: the reviewer contract's no-corpus case, exit 1 named, the repeated lines kept, the Delta's fresh RULES line.
 - deliberate: the Delta step does not yet say "none in a repository with no `.adr.yaml`"; phase 4's dotfiles PR edits this same paragraph for the `Candidates:` block and adds it.
 - 41k + 44k tokens.
+
+## Phase 4
+
+This repository carries Phase 4's skill and agent edits:
+- F4b's brief lists the `<<<CANDIDATES …>>>` block that amont-agent 3.3.0 prints;
+- step 3 and the Delta paste that block verbatim into the reviewer's prompt, after the RULES line;
+- the implementation-review contract adds a `Candidates:` block ruling on every listed id, which the push check reads; the output word cap leaves that block out;
+- the no-corpus exception goes, since `review-brief` now handles a repository with no `.adr.yaml`.
+
+The Delta's "none in a repository with no `.adr.yaml`" note (Phase 2's deliberate) lands here.
