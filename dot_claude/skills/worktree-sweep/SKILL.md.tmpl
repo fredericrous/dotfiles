@@ -1,6 +1,6 @@
 ---
 name: worktree-sweep
-description: Audit every git worktree under ~/Developer and remove the ones whose work is merged and released. Use when worktrees have accumulated, when disk is tight, or after finishing a task in a worktree.
+description: Audit every git worktree of the repos under ~/Developer (wherever the worktree lives, /tmp included) and remove the ones whose work is merged and released; --scratch also sweeps idle Claude Code scratch session dirs. Use when worktrees have accumulated, when disk is tight, or after finishing a task in a worktree.
 ---
 
 # worktree-sweep
@@ -28,12 +28,32 @@ GitHub repos the local ref can be the last *named* handle on the pre-squash comm
 They stay reachable either way — in the object store and permanently as
 `refs/pull/<n>/head` — but a branch ref is free and a 1 GB worktree is not.
 
-## Gates — all must pass to earn a SWEEP verdict
+## Content gate — SWEEP without a PR (added 2026-10-14)
+
+The person's rule: *if the changes are on origin main, it's safe to delete.*
+A worktree, detached or on a branch, earns SWEEP by content alone when:
+
+- its HEAD is an ancestor of `origin/<base>` (after the per-repo fetch), so
+  removing it loses no commit;
+- the tree is clean, except for uncommitted edits to `CLAUDE.md` /
+  `AGENTS.md`, which are generated guidance and are restored (`git restore`)
+  just before removal, logged as `DROPPED`;
+- its HEAD has not moved for 24 h (`MIN_IDLE_HOURS`, read from the
+  worktree's reflog, never the index). A task that just ran `worktree add -b
+  feat/x origin/main` has a HEAD on base and no edits yet; this guards it.
+
+No forge call, no release gate: nothing in the worktree is unmerged. A
+branch that fails the content gate goes on to the PR gates below; a detached
+HEAD that fails it is held ("not on origin/<base>"). Before this gate, ten
+such worktrees (2.9 GB) were held only for being detached.
+
+## PR gates — for work that is not on base yet; all must pass
 
 1. Not the primary checkout, not the current working directory, not `locked`,
    no `.no-sweep` marker file inside it.
-2. On a real branch (detached HEAD is never swept) that is not the base branch.
-3. `git status --porcelain` is empty — no modified *and* no untracked files.
+2. On a real branch that is not the base branch (a detached HEAD is decided
+   by the content gate only).
+3. No modified and no untracked files, save `CLAUDE.md` / `AGENTS.md` edits.
 4. Has an upstream, and zero commits ahead of it (nothing unpushed).
 5. A pull request for that branch exists and is **merged**.
 6. A `v*` tag contains the merge commit — *unless the repo has no `v*` tags at
@@ -90,6 +110,59 @@ until a tag contains the merge commit. **homelab has zero `v*` tags** — it shi
 via Flux on merge — so for any repo with no `v*` tags the gate is skipped and
 merge counts as released. Without that carve-out homelab worktrees would never
 be sweepable.
+
+## amont push rehearsal leftovers
+
+amont checks the pushed tip out at `$TMPDIR/amont-push-<pid>-<16 hex>`
+(`worktree add --detach`) and removes it when the push ends. A registered one
+is detached, so gate 2 would hold it forever; instead it is SWEEP when its pid
+is dead, it is over an hour old, its tree is clean, and its HEAD is still on a
+ref of the repo. A live pid means a rehearsal in flight: two seen on 2026-10-07
+had vanished minutes later.
+
+## `--repo` amends the snapshot
+
+`--repo X` replaces only X's entries in `state.json` and keeps the previous
+timestamp. It used to overwrite the whole snapshot with X alone, leaving
+`--nudge` blind to every other repo.
+
+## Where worktrees live
+
+Primaries are found under `~/Developer`; their linked worktrees are found
+**wherever they live** (`/tmp`, `$TMPDIR`, a Claude scratchpad), because
+`git worktree list` knows them all. The SessionStart `--nudge` counts the same
+set offline, by reading each primary's `.git/worktrees/*/gitdir` registrations.
+
+## Claude scratch session dirs (`--scratch`)
+
+```bash
+python3 ~/.claude/tools/worktree-sweep/sweep.py --scratch            # audit
+python3 ~/.claude/tools/worktree-sweep/sweep.py --scratch --apply    # remove SWEEP dirs
+python3 ~/.claude/tools/worktree-sweep/sweep.py --scratch --scratch-days 3
+```
+
+Claude Code keeps per-session temp state at `<root>/<project slug>/<session uuid>/`
+(`scratchpad/`, `tasks/`). `<root>` is `$CLAUDE_CODE_TMPDIR/claude-<uid>`,
+defaulting to `/tmp/claude-<uid>` — not `$TMPDIR`. `--scratch-root` overrides it.
+Only UUID-named session dirs are judged: the root also holds Claude Code's own
+state (`bash-edit-diff/`, `node-compile-cache/`, `bundled-skills/`), never touched.
+
+A session dir is SWEEP only when all hold:
+
+1. Not the running session (`$CLAUDE_CODE_SESSION_ID`).
+2. Idle ≥ N days (default 7), by the transcript
+   `~/.claude/projects/<slug>/<uuid>.jsonl` and the newest *file* inside.
+   **Directory mtimes are ignored**: something prunes these dirs nightly and
+   every deletion stamps the parent at 00:00, making 3-day-idle sessions look
+   active today.
+3. No linked worktree inside (that is the worktree sweep's job), and no repo
+   inside that is the primary of a live worktree elsewhere.
+4. Every repo inside that **has a remote** is clean with no commit absent from
+   its remotes. A remote-less repo was born in the scratchpad — scratch by
+   construction — and so is a `.git` gutted by the pruner (no `HEAD`, no `config`).
+
+A git command that fails yields UNKNOWN, which is never removed. Removals are
+logged as `SCRATCH-REMOVED` in `sweep.log`.
 
 ## Never
 

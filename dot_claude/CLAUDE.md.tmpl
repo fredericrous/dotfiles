@@ -38,6 +38,8 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
   (amont-agent `pipe-to-tail`; `relais-verified-push` for pushes).
 - Web/UI work is done when the rendered result is checked in a real browser (Chrome
   MCP or Playwright), not on CI green or a bundle grep.
+- A page for the person to look at opens in their default browser (`open '<url>'`),
+  never in chrome-devtools MCP / Playwright / headless Chrome — those are the agent's.
 - For a reported visual bug, reproduce the user's exact view (route, mode, zoom,
   state) before the fix and again after the deploy.
 

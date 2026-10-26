@@ -29,6 +29,17 @@ Two false HOLDs fixed 2026-09-11 (both erred safe, both gave the wrong reason):
   * Forgejo lookups used /pulls/{base}/{head} with base=<default branch>, so a
     PR stacked on another feature branch 404'd into "no pull request found".
     Now a 404 consults the open-PR list (one request per repo) by head.
+
+Content gate added 2026-10-14 (the person's rule: "if the changes are on
+origin main, it's safe to delete"). The gates above trace a *branch* to a
+merged PR, so a detached checkout, or a branch that never needed a PR, was
+held forever even when its HEAD sat on origin/<base> and it held nothing
+else: ten such worktrees, 2.9 GB, on the day. Now a worktree whose HEAD is an
+ancestor of origin/<base>, with a clean tree, is SWEEP by content -- removing
+it loses nothing. Uncommitted edits to CLAUDE.md / AGENTS.md (generated agent
+guidance) do not count as work; they are discarded at removal. A worktree
+whose HEAD moved within MIN_IDLE_HOURS is still held: an agent that just ran
+`worktree add -b feat/x origin/main` has a HEAD on base and no edits yet.
 """
 
 from __future__ import annotations
@@ -63,6 +74,13 @@ FORGE_TIMEOUT = 60
 GIT_TIMEOUT = 120
 
 SWEEP, HOLD, UNKNOWN = "SWEEP", "HOLD", "UNKNOWN"
+
+# Content gate (see the module docstring). Uncommitted edits to these files
+# are generated agent guidance, not work; they are discarded at removal.
+DROPPABLE_DIRTY = {"CLAUDE.md", "AGENTS.md"}
+# A HEAD that moved more recently than this may be a task that just started
+# from origin/<base> and has not committed yet; the content gate holds it.
+MIN_IDLE_HOURS = 24
 
 # A forge that is down costs FORGE_TIMEOUT * retries *per branch*. With seven
 # worktrees on one host that is minutes of dead waiting for an answer already
@@ -130,6 +148,9 @@ class Worktree:
     # "pr-head": no remote ref survives, so the merged PR's head sha must equal
     # HEAD -- that is proven only after the forge lookup, in classify().
     pushed: str = ""
+    # Tracked guidance files (DROPPABLE_DIRTY) with uncommitted edits, restored
+    # by remove() before `git worktree remove`, which refuses a modified tree.
+    drop: list[str] = field(default_factory=list)
 
     @property
     def name(self) -> str:
@@ -518,6 +539,47 @@ def amont_push_leftover(wt: Worktree, repo: Repo):
     wt.verdict, wt.reason = SWEEP, f"dead amont push rehearsal (pid {pid}), HEAD on {refs}"
 
 
+def head_idle_hours(wt: Worktree) -> float | None:
+    """Hours since this worktree's HEAD last moved (its reflog, else HEAD).
+    Not the index: `git status` rewrites it, so this tool would reset it."""
+    ok, gitdir = git(wt.path, "rev-parse", "--absolute-git-dir")
+    if not ok or not gitdir:
+        return None
+    for name in ("logs/HEAD", "HEAD"):
+        p = Path(gitdir) / name
+        if p.exists():
+            return (time.time() - p.stat().st_mtime) / 3600
+    return None
+
+
+def content_gate(wt: Worktree, repo: Repo) -> bool:
+    """Decide by content alone: HEAD on origin/<base> and nothing else held.
+    Returns True when it set a final verdict. Runs after the dirty check, so
+    the tree is already clean save for DROPPABLE_DIRTY files."""
+    ok, _ = git(wt.path, "merge-base", "--is-ancestor", "HEAD", f"origin/{repo.base}")
+    if not ok:
+        # Not on base (or git failed -- the safe reading). A branch goes on to
+        # the PR gates; a detached HEAD has nothing else to be traced by.
+        if wt.branch is None:
+            wt.verdict, wt.reason = HOLD, f"detached HEAD {wt.head[:12]} not on origin/{repo.base}"
+            return True
+        return False
+    idle = head_idle_hours(wt)
+    if idle is None:
+        wt.verdict, wt.reason = UNKNOWN, "could not read the HEAD reflog age"
+        return True
+    if idle < MIN_IDLE_HOURS:
+        if wt.branch is None:
+            wt.verdict = HOLD
+            wt.reason = f"on origin/{repo.base}, but HEAD moved {idle:.0f}h ago (< {MIN_IDLE_HOURS}h)"
+            return True
+        return False  # a fresh task branch: let the PR gates speak
+    wt.verdict = SWEEP
+    dropped = f", drops edits to {', '.join(wt.drop)}" if wt.drop else ""
+    wt.reason = f"HEAD on origin/{repo.base}, nothing else held{dropped}"
+    return True
+
+
 def local_gates(wt: Worktree, repo: Repo) -> bool:
     """Cheap, offline gates. Returns True only if still a candidate."""
     cwd = START_CWD
@@ -541,24 +603,35 @@ def local_gates(wt: Worktree, repo: Repo) -> bool:
         if run is not None:
             wt.verdict, wt.reason = HOLD, f"relais run {run} owns it -- relais resume --retire {run}"
             return False
-        wt.verdict, wt.reason = HOLD, "detached HEAD -- no branch to trace"
-        return False
-    if wt.branch in {repo.base, "main", "master"}:
+        # No branch to trace to a PR; the content gate below is the only way
+        # a detached checkout is ever swept.
+    elif wt.branch in {repo.base, "main", "master"}:
         wt.verdict, wt.reason = HOLD, f"checked out on {wt.branch}"
         return False
 
-    ok, dirty = git(wt.path, "status", "--porcelain")
-    if not ok:
+    # Two lists rather than `status --porcelain`: run() strips stdout, which
+    # eats the leading space of a ` M path` first line and shifts its path.
+    ok, tracked = git(wt.path, "diff", "--name-only", "HEAD")
+    ok2, untracked = git(wt.path, "ls-files", "--others", "--exclude-standard")
+    if not (ok and ok2):
         wt.verdict, wt.reason = UNKNOWN, "git status failed"
         return False
-    if dirty:
-        wt.verdict, wt.reason = HOLD, f"{len(dirty.splitlines())} uncommitted change(s)"
+    work = untracked.splitlines()
+    for path in tracked.splitlines():
+        (wt.drop if Path(path).name in DROPPABLE_DIRTY else work).append(path)
+    if work:
+        wt.verdict, wt.reason = HOLD, f"{len(work)} uncommitted change(s)"
         return False
 
     # Everything below is ref arithmetic, so refresh the refs first -- and
     # prune, so a branch the forge deleted on merge stops masquerading as a
     # remote ref frozen at its pre-squash commit.
     ensure_fetched(repo)
+
+    if content_gate(wt, repo):
+        return False
+    if wt.branch is None:
+        return False
 
     # Compare against the branch's OWN remote ref when there is one, not
     # whatever `@{upstream}` happens to be. A branch created with
@@ -708,10 +781,20 @@ def remove(wt: Worktree, prune_branch: bool = False) -> tuple[bool, str]:
             return True, "pruned"
         return False, "prune failed"
 
+    if wt.drop:
+        # Generated guidance edits (DROPPABLE_DIRTY), the only dirt the gates
+        # let through. Restore them, never --force the removal.
+        ok, _ = git(wt.path, "restore", "--staged", "--worktree", "--source=HEAD", "--", *wt.drop)
+        if not ok:
+            return False, f"could not discard edits to {', '.join(wt.drop)}"
+        log(f"DROPPED {wt.path} uncommitted {' '.join(wt.drop)}")
+
     ok, out = run(["git", "-C", str(wt.primary), "worktree", "remove", str(wt.path)])
     if not ok:
         return False, "git worktree remove refused"
     detail = f"released={wt.release}" if wt.release else "no-release-tag-gate"
+    if wt.pushed == "" and wt.reason.startswith("HEAD on origin/"):
+        detail = "content-gate"
     log(f"REMOVED {wt.path} branch={wt.branch} pr={wt.pr} {detail}")
     if wt.branch and prune_branch:
         # `-D`, not `-d`: both forges squash-merge, so `-d` always refuses.

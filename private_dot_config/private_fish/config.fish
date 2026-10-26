@@ -14,8 +14,6 @@ source $HOME/.iterm2_shell_integration.(basename $SHELL)
 
 set fish_greeting ""
 
-eval "$(conda "shell.$(basename "$SHELL")" hook)"
-
 # pnpm
 set -gx PNPM_HOME "/Users/fredericrous/.local/share/pnpm"
 if not string match -q -- $PNPM_HOME $PATH
@@ -33,6 +31,3 @@ direnv hook fish | source
 
 # Added by Windsurf
 fish_add_path /Users/fredericrous/.codeium/windsurf/bin
-
-# Added by Antigravity
-fish_add_path /Users/fredericrous/.antigravity/antigravity/bin

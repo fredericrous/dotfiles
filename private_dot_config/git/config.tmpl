@@ -36,7 +36,6 @@
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 [http]
-	sslVerify = false
 	postBuffer = 157286400
 [init]
 	defaultBranch = main
@@ -87,5 +86,34 @@
 	stance = deny
 [amont "agent.sed-in-place"]
 	stance = deny
+	shadow = 0.1
 [amont "agent.foreground-poll"]
 	stance = deny
+	shadow = 0.1
+[amont "agent.stat-bsd-format"]
+	stance = deny
+[amont "agent.worktree-remove-force"]
+	stance = deny
+[amont "agent.plan-review.dotfiles"]
+	path = ~/.local/share/chezmoi
+[amont "agent.glob-in-flag-value"]
+	stance = deny
+	shadow = 0.1
+[amont "agent.equals-separator"]
+	stance = deny
+	shadow = 0.1
+[amont "agent.implementation-review"]
+	stance = deny
+[amont "agent.push-preview"]
+	stance = deny
+[amont "agent.publish-without-skill"]
+	stance = deny
+[amont "agent.file-reread"]
+	stance = advise
+[amont "agent.lint-suppression-added"]
+	stance = deny
+[amont "agent.test-output-trimmed"]
+	stance = deny
+	shadow = 0.1
+[amont "agent.workspace-root-write"]
+	shadow = 0.1
