@@ -1,6 +1,8 @@
 {
   "advisorModel": "opus",
+  "apiKeyHelper": "cat ~/.cli-proxy-api/proxy-api-key.txt",
   "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
     "RUST_BACKTRACE": "1"
   },
   "permissions": {
@@ -27,6 +29,7 @@
       "mcp__chrome-devtools__list_network_requests"
     ]
   },
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -60,7 +63,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 19
           }
         ]
@@ -80,6 +83,19 @@
       },
       {
         "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Grep",
         "hooks": [
           {
             "type": "command",
@@ -122,7 +138,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 10
           }
         ]
@@ -147,7 +163,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 10
           }
         ]
@@ -177,6 +193,45 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "LSP",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
@@ -185,7 +240,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
             "timeout": 10
           }
         ]
@@ -196,7 +264,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 10
           }
         ]
@@ -207,7 +275,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 10
           }
         ]
@@ -218,7 +286,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/fredericrous/.cargo/bin/relais hook",
+            "command": "/usr/local/bin/relais hook",
             "timeout": 10
           }
         ]
@@ -237,16 +305,30 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": false,
     "clangd-lsp@claude-plugins-official": false,
     "swift-lsp@claude-plugins-official": false,
-    "rust-analyzer-lsp@claude-plugins-official": false,
-    "typescript-lsp@claude-plugins-official": false,
-    "pyright-lsp@claude-plugins-official": false,
-    "fleet-lsp@fleet-lsp": true
+    "fleet-lsp@fleet-lsp": true,
+    "relais@relais-local": true,
+    "github@claude-plugins-official": true,
+    "activity-vision@activity-vision-local": true,
+    "claude-code-setup@anthropic-plugin-directory": true
   },
   "extraKnownMarketplaces": {
     "fleet-lsp": {
@@ -254,6 +336,18 @@
         "source": "github",
         "repo": "fredericrous/fleet-lsp",
         "ref": "release"
+      }
+    },
+    "relais-local": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/fredericrous/.local/state/relais/claude-marketplace"
+      }
+    },
+    "activity-vision-local": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/fredericrous/.local/state/activity-vision/claude-marketplace"
       }
     }
   },

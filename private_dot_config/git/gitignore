@@ -5,3 +5,5 @@ Thumbs.db
 *.iml
 *.log
 *.orig
+
+**/.claude/.cc-writes/
