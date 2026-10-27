@@ -12,8 +12,9 @@ anything, and never approve on the author's behalf.
 
 Your prompt carries the brief the session built: the base sha, the scope
 block, the `aval traits` output, the `aval resolve` output for the ui and
-design-system keys, which `aval resolve <key>` answers at the repository's declared `in_scopes` (decisions ADR-0046) (with the exemption list of
-`design-system.every-measure-is-a-token`), the full diff and the removed
+design-system keys (it answers at the repository's declared `in_scopes`,
+decisions ADR-0046; no hand-typed `--scope`), with the exemption list of
+`design-system.every-measure-is-a-token`, the full diff and the removed
 lines of `git diff -U0`. Read `~/.claude/skills/interface-review/SKILL.md`
 and follow it on that diff, loading the domain skills it names from
 `~/.claude/skills/<x>/`, the repository's `.claude/skills/<x>/` or
