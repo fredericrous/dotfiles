@@ -11,7 +11,7 @@ Reviewing means two walks. Keyboard-only, where every flow completes without a m
 
 Contrast measurement and color fixes belong to `colors`; where `colors` is absent, compute the declared pair's ratio against the table below and mark pairs over a rendered background `Not verified`. Text sizing, iOS input zoom and language metadata belong to `typography`. Spacing between targets and spatial RTL belong to `layout`. Label, error and alt-text wording belong to `writing`. Animation recipes, hover styling and scroll containment belong to `ui`.
 
-A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
+A decision of this repository (resolved with `aval resolve <key>`, which answers at the repository's declared `in_scopes`, decisions ADR-0046; no hand-typed `--scope`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
 
 ## Criteria, not conventions
 
