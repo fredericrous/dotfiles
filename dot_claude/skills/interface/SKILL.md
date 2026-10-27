@@ -11,7 +11,7 @@ Orchestration is all it owns. Accessibility rules belong to `accessibility`, str
 
 Change-scoped review of uncommitted work, branches and pull requests belongs to `interface-review`.
 
-A decision of this repository (resolved at its applicable scope with `aval resolve`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
+A decision of this repository (resolved with `aval resolve <key>`, which answers at the repository's declared `in_scopes`, decisions ADR-0046; no hand-typed `--scope`) outranks a value in this skill. Apply token requirements and gap routing only where the repository's decisions require them, keeping their named exemptions. On `duro-stack`, a non-exempt measure without a token is a design-system gap under ADR-0006/0027, never a local literal.
 
 ## Evidence, not taste
 

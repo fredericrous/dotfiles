@@ -206,7 +206,7 @@ below names one of them.
      against `git diff --name-only <base>..HEAD`; no match, no step. Build
      one brief for the `interface-review` agent: the base sha, the scope
      block, the `aval traits` output, the `aval resolve` output for the ui
-     and design-system keys at the diff's scope (with the exemption list of
+     and design-system keys, which `aval resolve <key>` answers at the repository's declared `in_scopes` (decisions ADR-0046) (with the exemption list of
      `design-system.every-measure-is-a-token`), the full diff (no 60 KB cut)
      and the removed lines of `git diff -U0 <base>..HEAD`. Launch it in
      the same message as step 3's `implementation-review` launch, so the
