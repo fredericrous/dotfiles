@@ -15,8 +15,8 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 
 ## Git hygiene
 
-- Name the repository in each mutating git command (`git -C <repo>` or `cd <repo> &&`
-  in the same call): parallel calls share one cwd.
+- Name the repository in each mutating git command (`git -C <repo>` or a subshell
+  `(cd <repo> && …)`): a bare `cd` carries into the next call, batched siblings included.
 - Run `git status` before every commit and stage explicit paths (amont-agent `git-add-broad`).
 - Release: commit, check HEAD advanced, then tag, then push the tag — the
   `tag-release` skill. A tag is never force-pushed; a fix gets the next version.
@@ -56,7 +56,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 ## Forgejo API ({{ .forge.host }})
 
 - Both credentials are required: the mTLS cert `~/.config/mtls/{{ .forge.slug }}-client.{crt,key}`
-  (missing → curl HTTP 000) and the token in `~/.netrc` — the curl recipe is in `merge-when-green`.
+  (missing → curl HTTP 000) and the token in `~/.netrc` — the curl recipe is in `forgejo-recipes`.
 - Probe `/repos/{owner}/{repo}` to test access; `/api/v1/user` 403s on this token's
   scope. Never echo the token into output, a commit or a PR body; pass it in `$TOK`.
   More: the `reference_forgejo_*` memories.
