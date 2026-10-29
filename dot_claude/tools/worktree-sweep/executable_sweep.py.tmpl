@@ -771,6 +771,126 @@ def log(msg: str):
         fh.write(f"{time.strftime('%Y-%m-%dT%H:%M:%S%z')} {msg}\n")
 
 
+# --------------------------------------------------------------------------
+# language servers (fleet-lsp's children)
+# --------------------------------------------------------------------------
+#
+# Claude Code's LSP tool runs `fleet-lsp serve <language>` once per session,
+# and fleet-lsp starts one server per repository or worktree it is asked
+# about (rust-analyzer, gopls, pyright, typescript-language-server), with
+# that checkout as its working directory. Nothing stops a server when its
+# checkout goes away: on 2026-10-29 twelve rust-analyzers of deleted
+# worktrees held enough memory that swap was 20 of 21.5 GB. So a removal
+# also stops the servers rooted in what it removed, and every sweep stops
+# servers whose working directory no longer exists. Only direct children of
+# a `fleet-lsp` process are touched: an editor's own servers are not ours.
+
+LSP_PARENT = "fleet-lsp"
+# How long a SIGTERMed server gets to exit before SIGKILL.
+LSP_GRACE_SECONDS = 3.0
+
+
+@dataclass
+class LangServer:
+    pid: int
+    command: str
+    cwd: Path | None
+
+
+def _process_table() -> list[tuple[int, int, str]]:
+    ok, out = run(["ps", "-Ao", "pid=,ppid=,comm="], timeout=30)
+    rows = []
+    if not ok:
+        return rows
+    for line in out.splitlines():
+        parts = line.split(None, 2)
+        if len(parts) == 3 and parts[0].isdigit() and parts[1].isdigit():
+            rows.append((int(parts[0]), int(parts[1]), parts[2].strip()))
+    return rows
+
+
+def language_servers() -> list[LangServer]:
+    """fleet-lsp's servers, each with its working directory (None when it
+    could not be read)."""
+    table = _process_table()
+    parents = {pid for pid, _, comm in table if Path(comm).name == LSP_PARENT}
+    servers = [(pid, Path(comm).name) for pid, ppid, comm in table if ppid in parents]
+    if not servers:
+        return []
+    cwds: dict[int, Path] = {}
+    ok, out = run(["lsof", "-a", "-d", "cwd", "-Fpn", "-p", ",".join(str(p) for p, _ in servers)],
+                  timeout=30)
+    current = None
+    for line in out.splitlines() if out else []:
+        if line.startswith("p") and line[1:].isdigit():
+            current = int(line[1:])
+        elif line.startswith("n") and current is not None:
+            cwds[current] = Path(line[1:])
+    return [LangServer(pid, command, cwds.get(pid)) for pid, command in servers]
+
+
+def _descendants(pid: int, table: list[tuple[int, int, str]]) -> list[int]:
+    out, frontier = [], [pid]
+    while frontier:
+        nxt = [child for child, ppid, _ in table if ppid in frontier]
+        out.extend(nxt)
+        frontier = nxt
+    return out
+
+
+def stop_server(server: LangServer, why: str) -> bool:
+    """SIGTERM the server and what it started (tsserver runs under node), then
+    SIGKILL whatever is still there after LSP_GRACE_SECONDS. fleet-lsp starts
+    a fresh one if that checkout is ever asked about again."""
+    import signal
+    tree = [server.pid] + _descendants(server.pid, _process_table())
+    for pid in tree:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        except PermissionError:
+            return False
+    deadline = time.time() + LSP_GRACE_SECONDS
+    while time.time() < deadline and any(pid_alive(p) for p in tree):
+        time.sleep(0.1)
+    for pid in tree:
+        if pid_alive(pid):
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    log(f"LSP-STOPPED pid={server.pid} {server.command} cwd={server.cwd} ({why})")
+    return True
+
+
+def _within(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except (ValueError, OSError):
+        return False
+
+
+def orphan_servers(servers: list[LangServer]) -> list[LangServer]:
+    """Servers whose working directory no longer exists."""
+    return [s for s in servers if s.cwd is not None and not s.cwd.exists()]
+
+
+def report_orphan_servers(apply: bool):
+    orphans = orphan_servers(language_servers())
+    if not orphans:
+        return
+    print()
+    for s in orphans:
+        print(f"ORPHAN-LSP pid {s.pid:<7} {s.command:<26} {s.cwd}")
+    if not apply:
+        print(f"{len(orphans)} language server(s) of deleted checkouts — re-run with --apply to stop them.")
+        return
+    stopped = sum(stop_server(s, "checkout gone") for s in orphans)
+    print(f"Stopped {stopped} language server(s) of deleted checkouts.")
+
+
 def remove(wt: Worktree, prune_branch: bool = False) -> tuple[bool, str]:
     """Remove a SWEEP worktree. Never --force: an unexpected untracked file
     must abort the removal, not be bulldozed."""
@@ -789,9 +909,14 @@ def remove(wt: Worktree, prune_branch: bool = False) -> tuple[bool, str]:
             return False, f"could not discard edits to {', '.join(wt.drop)}"
         log(f"DROPPED {wt.path} uncommitted {' '.join(wt.drop)}")
 
+    # Read before removal: once the directory is gone, a server's cwd can no
+    # longer be resolved against it.
+    rooted = [s for s in language_servers() if s.cwd is not None and _within(s.cwd, wt.path)]
     ok, out = run(["git", "-C", str(wt.primary), "worktree", "remove", str(wt.path)])
     if not ok:
         return False, "git worktree remove refused"
+    for s in rooted:
+        stop_server(s, f"worktree {wt.path} removed")
     detail = f"released={wt.release}" if wt.release else "no-release-tag-gate"
     if wt.pushed == "" and wt.reason.startswith("HEAD on origin/"):
         detail = "content-gate"
@@ -1178,9 +1303,12 @@ def report(repos: list[Repo], apply: bool):
     print()
     if not sweepable:
         print("Nothing to sweep.")
+        report_orphan_servers(apply)
         return 0
     if not apply:
-        print(f"{len(sweepable)} sweepable, {human(total)} — re-run with --apply to remove.")
+        print(f"{len(sweepable)} sweepable, {human(total)} — re-run with --apply to remove "
+              f"(and stop their language servers).")
+        report_orphan_servers(apply)
         return 0
 
     freed = 0
@@ -1194,6 +1322,7 @@ def report(repos: list[Repo], apply: bool):
     # --nudge reads that file. A stale cache here nags about work already done.
     save_state(repos)
     print(f"\nFreed {human(freed)}. Log: {LOG_FILE}")
+    report_orphan_servers(apply)
     return 0
 
 
@@ -1340,6 +1469,9 @@ def main():
                          "in worktrees idle >= --deps-days; source is never touched")
     ap.add_argument("--deps-days", type=int, default=PRUNE_DEPS_DAYS,
                     help=f"idle threshold for --prune-deps (default {PRUNE_DEPS_DAYS})")
+    ap.add_argument("--lsp", action="store_true",
+                    help="only list (with --apply, stop) fleet-lsp language servers whose "
+                         "checkout no longer exists; no forge lookups")
     args = ap.parse_args()
 
     global PRUNE_BRANCHES, START_CWD, REPO_SCOPE
@@ -1348,6 +1480,14 @@ def main():
 
     if args.nudge:
         return nudge()
+
+    if args.lsp:
+        orphans = orphan_servers(language_servers())
+        if not orphans:
+            print("No language servers of deleted checkouts.")
+            return 0
+        report_orphan_servers(args.apply)
+        return 0
 
     if not shutil.which("git"):
         print("git not found", file=sys.stderr)

@@ -381,8 +381,10 @@ below names one of them.
      cd <repo-root> && python3 ~/.claude/tools/worktree-sweep/sweep.py --repo <repo> --apply
      ```
      It removes only worktrees that are clean, fully pushed, merged and
-     contained in a release tag, and leaves anything it cannot verify. See
-     the `worktree-sweep` skill.
+     contained in a release tag, and leaves anything it cannot verify. It
+     also stops the language servers (rust-analyzer, gopls, pyright, the
+     TypeScript server) of every checkout that no longer exists, the one
+     removed in step 1 included. See the `worktree-sweep` skill.
   3. In the report, say what was removed and what the sweep kept, one line
      each.
 
@@ -398,6 +400,7 @@ cd <repo-root>
 git status --short              # sanity check what's about to be discarded, from the worktree path
 git worktree remove --force ../<repo>-wt-<slug>
 git branch -D <branch-name>     # only if the branch was never pushed / isn't needed
+python3 ~/.claude/tools/worktree-sweep/sweep.py --lsp --apply   # stop its language servers
 ```
 
 Confirm with the user before this mode if the worktree has any uncommitted work — this is the one destructive path in this skill.

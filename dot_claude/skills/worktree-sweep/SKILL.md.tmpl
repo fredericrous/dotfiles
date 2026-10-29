@@ -14,7 +14,20 @@ python3 ~/.claude/tools/worktree-sweep/sweep.py            # audit, change nothi
 python3 ~/.claude/tools/worktree-sweep/sweep.py --apply    # audit, then remove SWEEP-verdict worktrees
 python3 ~/.claude/tools/worktree-sweep/sweep.py --repo trade-agents --apply
 python3 ~/.claude/tools/worktree-sweep/sweep.py --json     # machine-readable
+python3 ~/.claude/tools/worktree-sweep/sweep.py --lsp --apply  # only stop language servers of deleted checkouts
 ```
+
+**Language servers go with their checkout.** fleet-lsp starts one server per
+worktree it is asked about (rust-analyzer, gopls, pyright, the TypeScript
+server under node), and nothing stopped them when the worktree went away: on
+2026-10-29, twelve rust-analyzers of deleted worktrees had swap at 20 of
+21.5 GB. Now a removal stops the servers rooted in that worktree, and every
+run lists — with `--apply`, stops — the servers whose working directory no
+longer exists (`ORPHAN-LSP` lines; `LSP-STOPPED` in the log). Only direct
+children of a `fleet-lsp` process are touched, never an editor's own; a
+stopped server comes back if that checkout is asked about again. `--lsp` does
+only this, without forge lookups, for right after a `git worktree remove` by
+hand.
 
 Removals are automatic under `--apply` — no per-worktree confirmation. That is
 deliberate: every gate below must pass first, and a swept worktree is one
