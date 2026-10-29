@@ -11,8 +11,12 @@ public copies come from greenharness/skills through `grh`.
 
 ## Sweeping worktrees on Forgejo
 
-`worktree-sweep`'s `sweep.py` asks Forgejo only when `SWEEP_FORGEJO_HOST` is
-set. `~/.zshenv` exports it, with the client certificate, for every shell:
+Two copies of `sweep.py` live on this machine. The published skill's copy,
+`~/.claude/skills/worktree-sweep/sweep.py` (placed by grh), asks Forgejo only
+when `SWEEP_FORGEJO_HOST` is set; `~/.zshenv` exports it, with the client
+certificate, for every shell. The copy the `settings.json` hook runs,
+`~/.claude/tools/worktree-sweep/sweep.py`, is templated from chezmoi data and
+needs no variable:
 
 ```sh
 SWEEP_FORGEJO_HOST={{ .forge.host }}
@@ -26,7 +30,7 @@ UNKNOWN and are never removed.
 ## Forgejo ({{ .forge.host }}) — `gh` does NOT work here
 
 `homelab`, `application-landscape` and the other self-hosted repos live on
-Forgejo, where every `gh` command above is unavailable. The RULES are
+Forgejo, where every `gh` command in `merge-when-green` is unavailable. The RULES are
 identical (poll to completion, read the result as its own step, never
 auto-merge); only the transport changes. Both credentials are required — see
 `~/.claude/CLAUDE.md` § Forgejo API.
@@ -86,9 +90,8 @@ $CURL -H "Content-Type: application/json" -X POST \
 
 `Do` is `merge` / `rebase` / `squash`. **These repos use merge commits** — their
 history is uniformly `Merge pull request '…' (#n)` — so `merge` is the default
-here, not the `--squash` above. Expect `HTTP 200`; verify by pulling `main` and
-checking the merge commit landed, never by the exit code alone. Then run
-step 6 above (the live-checkout fast-forward), which works the same on either
+here, not merge-when-green's `--squash`. Expect `HTTP 200`; verify by pulling `main` and
+checking the merge commit landed, never by the exit code alone. Then run merge-when-green's live-checkout fast-forward step, which works the same on either
 forge.
 
 `merge_when_checks_succeed: true` exists in the API and is the Forgejo
