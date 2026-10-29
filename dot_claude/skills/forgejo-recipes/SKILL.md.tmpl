@@ -1,0 +1,97 @@
+---
+name: forgejo-recipes
+description: The private Forgejo ({{ .forge.host }}) recipes this machine needs beside the published skills - merging a PR on Forgejo (curl API, mTLS and token) and sweeping its worktrees. Use with merge-when-green and worktree-sweep whenever the repository's remote is on {{ .forge.host }}.
+---
+
+# forgejo-recipes
+
+Local only, never published (ADR-0050 `harness.skills-source`): the
+machine-specific half of `merge-when-green` and `worktree-sweep`, whose
+public copies come from greenharness/skills through `grh`.
+
+## Sweeping worktrees on Forgejo
+
+`worktree-sweep`'s `sweep.py` asks Forgejo only when `SWEEP_FORGEJO_HOST` is
+set. `~/.zshenv` exports it, with the client certificate, for every shell:
+
+```sh
+SWEEP_FORGEJO_HOST={{ .forge.host }}
+SWEEP_FORGEJO_CERT=$HOME/.config/mtls/{{ .forge.slug }}-client.crt
+SWEEP_FORGEJO_KEY=$HOME/.config/mtls/{{ .forge.slug }}-client.key
+```
+
+The token comes from `~/.netrc`. Without these, Forgejo repositories read
+UNKNOWN and are never removed.
+
+## Forgejo ({{ .forge.host }}) — `gh` does NOT work here
+
+`homelab`, `application-landscape` and the other self-hosted repos live on
+Forgejo, where every `gh` command above is unavailable. The RULES are
+identical (poll to completion, read the result as its own step, never
+auto-merge); only the transport changes. Both credentials are required — see
+`~/.claude/CLAUDE.md` § Forgejo API.
+
+```sh
+TOK=$(awk '/machine {{ .forge.host }}/{print $6}' ~/.netrc)
+CURL="curl -sS --cert $HOME/.config/mtls/{{ .forge.slug }}-client.crt --key $HOME/.config/mtls/{{ .forge.slug }}-client.key -H \"Authorization: token $TOK\""
+```
+
+**Poll the checks** — statuses hang off the HEAD SHA, not the PR:
+
+```sh
+# head sha
+$CURL "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/pulls/<n>" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['head']['sha'])"
+
+# every status for it, newest first
+$CURL "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/commits/<sha>/statuses"
+```
+
+TWO TRAPS, both of which have already cost a stuck poll:
+
+1. The value lives in **`status`** (`success` / `pending` / `failure` /
+   `skipped`); the `state` field is `null`. Reading `state` makes a green run
+   look unknown and a red one look green.
+2. The list is append-only — the same context appears once per transition — so
+   it must be deduped by `context`. **Do NOT dedupe by "keep the newest row":
+   two rows can share a timestamp to the second** and the API returns the
+   PENDING one first. A skipped job emits
+   `pending "Has started running"` and `success "Has been skipped"` both
+   stamped the same second, so "newest wins" pins it at `pending` forever and
+   an `until` loop never exits. **A TERMINAL status always wins over
+   `pending`.**
+
+```python
+TERMINAL = {"success", "failure", "error", "skipped"}
+best = {}
+for r in rows:                      # newest first, as returned
+    c, st = r["context"], r["status"]
+    if c not in best or (best[c] not in TERMINAL and st in TERMINAL):
+        best[c] = st
+```
+
+`skipped` counts as PASSING — a path-filtered job (golangci-lint on a
+YAML-only PR) legitimately skips and never reports success.
+
+The combined endpoint `/commits/<sha>/status` gives one roll-up `state`, but
+prefer the per-context list: it is the one that shows WHICH check is red.
+
+**Merge**, only after reading that result in a separate step:
+
+```sh
+$CURL -H "Content-Type: application/json" -X POST \
+  "https://{{ .forge.host }}/api/v1/repos/<owner>/<repo>/pulls/<n>/merge" \
+  -d '{"Do":"merge"}' -w '\nHTTP %{http_code}\n'
+```
+
+`Do` is `merge` / `rebase` / `squash`. **These repos use merge commits** — their
+history is uniformly `Merge pull request '…' (#n)` — so `merge` is the default
+here, not the `--squash` above. Expect `HTTP 200`; verify by pulling `main` and
+checking the merge commit landed, never by the exit code alone. Then run
+step 6 above (the live-checkout fast-forward), which works the same on either
+forge.
+
+`merge_when_checks_succeed: true` exists in the API and is the Forgejo
+equivalent of `--auto` — **do not use it**, for the same reason: without
+required-checks protection configured it merges immediately.
+

@@ -24,7 +24,7 @@ run() {
 run --destination "$dst" apply --exclude encrypted,externals,scripts
 
 # What must have come out.
-for f in .zshrc .claude/CLAUDE.md .claude/skills/worktree-task/SKILL.md; do
+for f in .zshrc .zshenv .claude/CLAUDE.md .claude/skills/forgejo-recipes/SKILL.md; do
   if [ ! -s "$dst/$f" ]; then
     echo "render: $f is missing or empty in the rendered home" >&2
     exit 1

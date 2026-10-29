@@ -1,0 +1,9 @@
+. "$HOME/.cargo/env"
+{{- if .forge.host }}
+
+# worktree-sweep asks the private forge only when told its host
+# (dot_claude/skills/forgejo-recipes).
+export SWEEP_FORGEJO_HOST={{ .forge.host | quote }}
+export SWEEP_FORGEJO_CERT="$HOME/.config/mtls/{{ .forge.slug }}-client.crt"
+export SWEEP_FORGEJO_KEY="$HOME/.config/mtls/{{ .forge.slug }}-client.key"
+{{- end }}
