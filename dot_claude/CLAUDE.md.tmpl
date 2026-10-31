@@ -83,6 +83,11 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
   `work.*` rules (ADR-0022/0023/0028) — run `/plan-review` before ExitPlanMode.
 - When a decision is the person's, offer 2–4 options, recommendation first
   (`work.human-decisions-offer-options`).
+- Triage: one sentence → code; one session with every decision statable →
+  plan mode + panel; more sessions or unstatable decisions → a programme map
+  (`programme` skill, `work.programme-map`).
+- Before a worktree, a diagnosis or a release, check who works there:
+  `amont-agent board --repo <r>` (`work.board-before-starting`).
 
 ## Relais routing
 
