@@ -11,7 +11,7 @@ This repository carries Phase 4: the always-on CLAUDE.md line about pages for th
 
 ## Code review
 
-- dotfiles: none — one line of the CLAUDE.md template
+- chezmoi: none — one line of the CLAUDE.md template (the dotfiles repository)
 
 ## Verification
 
