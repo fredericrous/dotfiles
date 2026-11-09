@@ -1,6 +1,6 @@
 ---
 name: forgejo-recipes
-description: The private Forgejo ({{ .forge.host }}) recipes this machine needs beside the published skills - merging a PR on Forgejo (curl API, mTLS and token) and sweeping its worktrees. Use with merge-when-green and worktree-sweep whenever the repository's remote is on {{ .forge.host }}.
+description: The private Forgejo ({{ .forge.host }}) recipes this machine needs beside the published skills - the mTLS client certificate and token, merging a PR (curl API), reading a CI job's log, publishing an npm package to its registry, installing a Python or npm dependency it hosts, its bot accounts, and sweeping its worktrees. Use with merge-when-green and worktree-sweep whenever the repository's remote is on {{ .forge.host }}, and whenever a command needs anything hosted there (a uv/pip/npm install that hits its mTLS gate, a failed Forgejo Actions run, a package publish).
 ---
 
 # forgejo-recipes
@@ -8,6 +8,131 @@ description: The private Forgejo ({{ .forge.host }}) recipes this machine needs 
 Local only, never published (ADR-0050 `harness.skills-source`): the
 machine-specific half of `merge-when-green` and `worktree-sweep`, whose
 public copies come from greenharness/skills through `grh`.
+
+## Credentials: the client certificate and the token
+
+Everything on {{ .forge.host }} sits behind mTLS. Without the client
+certificate curl reports `HTTP 000` and an installer fails on the TLS
+handshake. The files, in `~/.config/mtls/`:
+
+- `{{ .forge.slug }}-client.crt` and `{{ .forge.slug }}-client.key`: curl and
+  the API (`--cert` / `--key`).
+- `{{ .forge.slug }}-client.pem`: the same pair in one file, for tools that
+  take a single path (`SSL_CLIENT_CERT`, npm's `certfile`/`keyfile`).
+- `*.expired-<date>` files beside them are the previous pair; never use them.
+
+Check the expiry before blaming anything else:
+`openssl x509 -in ~/.config/mtls/{{ .forge.slug }}-client.crt -noout -enddate`.
+
+The API token is in `~/.netrc` (`machine {{ .forge.host }}`). Read it into
+`$TOK`; never echo it into output, a commit or a PR body. Probe access with
+`/api/v1/repos/<owner>/<repo>`: `/api/v1/user` returns 403 on this token's scope.
+
+## Installing a dependency it hosts (uv, pip, npm)
+
+A Python package index and an npm registry live at
+`https://{{ .forge.host }}/api/packages/<org>/pypi` and `…/npm/`. When an
+install fails on the mTLS gate, **give it the certificate and run the normal
+full install**:
+
+```sh
+SSL_CLIENT_CERT=$HOME/.config/mtls/{{ .forge.slug }}-client.pem uv sync --all-packages
+```
+
+Never narrow the install (`uv sync --package X`, skipping the package that
+pulls the hosted one in) to dodge the gate: it leaves a partial,
+non-standard environment. Fall back only when the certificate is missing or
+expired, and say so.
+
+## Reading a Forgejo Actions job log
+
+**There is no log API.** The swagger exposes `/repos/{o}/{r}/actions/runs`
+and `/actions/runs/{id}` only; every `…/jobs` and `…/logs` URL is a 404.
+Do not probe for them. What the API does give:
+
+- `/repos/{o}/{r}/actions/tasks?limit=N`: runs with `run_number`, `status`,
+  `head_sha`, `run_started_at`, `updated_at`. The difference between the
+  last two is the duration, which alone separates a timeout from a failure.
+- `/repos/{o}/{r}/commits/{sha}/statuses`: which check failed (deduped as in
+  the merge section below).
+
+For the error itself, read the log file out of the cluster. `k` is kubectl
+against the homelab cluster, as a function: the Bash tool runs zsh, which does
+not split a `$K="kubectl --kubeconfig …"` string into words. The homelab
+repository's `CLAUDE.md` names the kubeconfig. The database primary moves on a
+failover, so find it first:
+
+```sh
+k() { kubectl --kubeconfig "$HOME/Developer/Perso/homelab/infrastructure/homelab/kubeconfig.yaml" "$@"; }
+PG=$(k -n postgres get pods -l cnpg.io/cluster=postgres-apps,role=primary -o name)
+# 1. the repository id: never hardcode it, it changes on re-migration
+k -n postgres exec "$PG" -c postgres -- psql -U postgres -d forgejo -At \
+  -c "SELECT id FROM repository WHERE lower(name)=lower('<repo>');"
+
+# 2. its newest tasks (status 1 success, 2 failure, 3 cancelled, 4 skipped, 5 waiting, 6 running)
+k -n postgres exec "$PG" -c postgres -- psql -U postgres -d forgejo -A -F'|' -c "
+SELECT t.id, t.status, t.log_filename, t.log_length
+FROM action_task t JOIN action_run_job j ON j.id=t.job_id JOIN action_run r ON r.id=j.run_id
+WHERE r.repo_id=<id> ORDER BY t.id DESC LIMIT 4;"
+
+# 3. the log: zstd-compressed JSON lines, the text in .content
+SCRATCH=$(mktemp -d)
+FP=$(k -n forgejo get pods -o name | grep -E 'pod/forgejo-[a-z0-9]+-[a-z0-9]+$' | head -1)
+k -n forgejo exec "$FP" -- sh -c 'cat /data/actions_log/<log_filename>' > "$SCRATCH/x.log.zst"
+zstd -dc "$SCRATCH/x.log.zst" | python3 -I -c "
+import sys, json
+for l in sys.stdin:
+    try: print(json.loads(l).get('content', ''))
+    except Exception: print(l, end='')"
+```
+
+`zstd -dc` alone prints JSON noise; keep the decode. A check that stays
+`pending` with no run row: list what waits for a runner fleet-wide
+(`j.status IN (5,6)` on `action_run_job`, joined to `action_run` for the
+repository). A short (about 2 min) failure on a content-free commit is
+usually a transient runner fault (`ETXTBSY` during an install): read the log
+before assuming the change broke something. Forgejo has no re-run API; the
+next push re-runs it.
+
+## Publishing an npm package to its registry
+
+Registry: `https://{{ .forge.host }}/api/packages/<org>/npm/`, not npmjs.org.
+
+- **Mint the publish token for the human user, never for the organization.**
+  A token minted for the org authenticates on `/api/v1` but gets only read
+  on the org's packages (the org is not a member of itself), so every PUT is
+  a 401 with the bare body `reqPackageAccess`, and the access log's
+  `"user":"-"` misleads. The human owner is the site admin
+  (`forgejo admin user list --admin`).
+- The publish token (`write:package`) is `FORGEJO_NPM_PUBLISH_TOKEN` in the
+  homelab repository's gitignored `.env`. The token in `~/.npmrc` is
+  read-only and 401s on a publish.
+- The token never goes on a command line. Write a temporary npmrc with
+  `umask 077` in the scratch directory (the registry line, `certfile` and
+  `keyfile` pointing at the `.pem`, and `_authToken` from `.env`), run
+  `npm publish <tgz> --userconfig <tmp> --registry <registry>`, then delete it.
+- Verify with `npm view` against the registry and compare the integrity with
+  the local tgz. To prove a package is absent from public npm, `curl`
+  registry.npmjs.org directly: `npm view --registry …` is overridden by the
+  `~/.npmrc` scope mapping and lies.
+- **Consumer lockfile trap:** npm writes a `%40<scope>%2F…` resolved URL.
+  Rewrite it to the path form `…/npm/@<scope>/<pkg>/-/<pkg>-<ver>.tgz` and
+  check that `grep -c '%40<scope>%2F' package-lock.json` is 0.
+
+## Bot accounts
+
+`amont-bot` is a **restricted**, private, non-admin user: it sees only the
+repositories it is added to. Its secrets are in the macOS Keychain, never in
+a file:
+
+```sh
+security find-generic-password -a amont-bot -s {{ .forge.host }}-amont-bot-password -w
+security find-generic-password -a amont-bot -s {{ .forge.host }}-amont-bot-read-token -w   # read:repository
+```
+
+Read either into a variable and pipe it; never echo it. A new bot follows the
+same shape: restricted, private, one Keychain item per secret named
+`{{ .forge.host }}-<bot>-<what>`.
 
 ## Sweeping worktrees on Forgejo
 
