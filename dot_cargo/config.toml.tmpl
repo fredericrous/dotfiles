@@ -1,0 +1,16 @@
+{{- $jobs := output "sysctl" "-n" "hw.physicalcpu" | trim | atoi | add -2 | max 1 -}}
+# Width cap for cargo run outside the host slots: bare agent runs, the
+# LSP's cargo check, the interactive shell. The width is
+# physical cores - 2 (at least 1), read at apply time: 4 on a 6-core i7.
+#
+# Neither value may move to a shell export. The host slots (greengate
+# docs/host-slots.md#width) keep any CARGO_BUILD_JOBS / RUST_TEST_THREADS a
+# command inherits, so an export would widen every slot holder. Here the
+# process environment wins: cargo's CARGO_BUILD_JOBS overrides build.jobs,
+# and an [env] entry without `force` yields to an exported variable, so a
+# slot's computed width still applies under the slots.
+[build]
+jobs = {{ $jobs }}
+
+[env]
+RUST_TEST_THREADS = "{{ $jobs }}"
