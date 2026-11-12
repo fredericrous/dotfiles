@@ -7,3 +7,4 @@ Thumbs.db
 *.orig
 
 **/.claude/.cc-writes/
+**/.browser-check/

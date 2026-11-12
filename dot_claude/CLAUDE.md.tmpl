@@ -37,7 +37,8 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 - Run a mutating command bare and check its effect, never through `tail`/`head`
   (amont-agent `pipe-to-tail`; `relais-verified-push` for pushes).
 - Web/UI work is done when the rendered result is checked in a real browser (Chrome
-  MCP or Playwright), not on CI green or a bundle grep.
+  MCP or Playwright), not on CI green or a bundle grep; the agent's own browser checks
+  run through the `browser-check` agent and the session reads its report, not screenshots.
 - A page for the person to look at, a preview or a question's options, opens through
   `amont-agent open '<url>'` before they are asked (`work.page-shown-before-asked`, hook
   `ask-unopened-page`); never chrome-devtools MCP / Playwright, which are the agent's.
