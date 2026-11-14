@@ -119,5 +119,19 @@
 	shadow = 0.1
 [amont "agent.plan-review"]
 	root = ~/Developer/Perso
+[amont "agent"]
+	opener = \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" {}
+[amont "agent.unsplit-expansion"]
+	stance = advise
+[amont "agent.read-unbounded-large"]
+	stance = deny
+[amont "agent.whole-file-dump"]
+	stance = deny
 [amont "agent.symbol-grep-not-lsp"]
 	denyAgents = relais:relais-worker-haiku-*
+[greengate "cluster"]
+	image = {{ .forge.host }}/fredericrous/gate-runner:main-6a5cf6b@sha256:01e1c07addc406df31d733458629abbbc34110a1d2b6463d572a75e4f9fb9b16
+	kubeconfig = ~/.config/greengate/kube/homelab.yaml
+	snapshotfetch = http://forgejo-http.forgejo.svc.cluster.local:3000/amont-snapshots/{repo}.git
+	snapshotremote = git@{{ .forge.host }}:amont-snapshots/{repo}.git
+	signer = in-cluster

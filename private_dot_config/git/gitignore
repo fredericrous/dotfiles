@@ -8,3 +8,5 @@ Thumbs.db
 
 **/.claude/.cc-writes/
 **/.browser-check/
+
+**/.claude/settings.local.json

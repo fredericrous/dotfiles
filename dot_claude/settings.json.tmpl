@@ -1,9 +1,10 @@
 {
-  "advisorModel": "opus",
-  "apiKeyHelper": "cat ~/.cli-proxy-api/proxy-api-key.txt",
+  "apiKeyHelper": "cat ~/.cli-proxy-api/cliproxy-homelab-key.txt",
   "env": {
-    "ANTHROPIC_BASE_URL": "http://127.0.0.1:8317",
-    "RUST_BACKTRACE": "1"
+    "ANTHROPIC_BASE_URL": "https://{{ .forge.host | replace "git." "cliproxy." }}",
+    "RUST_BACKTRACE": "1",
+    "KUBEBUILDER_ASSETS": "/Users/fredericrous/Library/Application Support/io.kubebuilder.envtest/k8s/1.29.0-darwin-amd64",
+    "PATH": "/Users/fredericrous/.bun/bin:/Users/fredericrous/.local/share/pnpm:/Users/fredericrous/.sdkman/candidates/java/current/bin:/Users/fredericrous/go/bin:/usr/local/opt/go/libexec/bin:/Users/fredericrous/.antigravity/antigravity/bin:/Applications/Docker.app/Contents/Resources/bin:/Users/fredericrous/.codeium/windsurf/bin:/usr/local/opt/libpq/bin:/usr/local/opt/llvm/bin:/Users/fredericrous/.local/bin:/Applications/p4merge.app/Contents/MacOS:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/gnu-sed/libexec/gnubin:/usr/local/bin:/usr/local/sbin:/Users/fredericrous/.config/git/bin:/usr/local/opt/openjdk/bin:/usr/local/opt/mysql-client/bin:/usr/local/opt/fzf/bin:/Users/fredericrous/.cargo/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/MacGPG2/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Wireshark.app/Contents/MacOS:/Applications/Ghostty.app/Contents/MacOS"
   },
   "permissions": {
     "allow": [
@@ -106,6 +107,19 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__chrome-devtools__take_screenshot",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/amont-agent",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -140,6 +154,14 @@
             "type": "command",
             "command": "/usr/local/bin/relais hook",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c '[ -n \"$(find . -maxdepth 3 -name package.json -not -path \"*/node_modules/*\" -exec grep -l \"@duro-app/\" {} + 2>/dev/null)\" ] || exit 0; [ -e .claude/hooks/duro-catalog.sh ] && exit 0; exec npx -y @duro-app/cli@^6 context'"
           }
         ]
       }
@@ -328,7 +350,8 @@
     "relais@relais-local": true,
     "github@claude-plugins-official": true,
     "activity-vision@activity-vision-local": true,
-    "claude-code-setup@anthropic-plugin-directory": true
+    "claude-code-setup@anthropic-plugin-directory": true,
+    "clear-relay@amont-agent": true
   },
   "extraKnownMarketplaces": {
     "fleet-lsp": {
@@ -349,9 +372,23 @@
         "source": "directory",
         "path": "/Users/fredericrous/.local/state/activity-vision/claude-marketplace"
       }
+    },
+    "amont-agent": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/fredericrous/.local/state/amont-agent/claude-marketplace"
+      }
     }
   },
+  "advisorModel": "opus",
   "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
-  "agentPushNotifEnabled": true
+  "agentPushNotifEnabled": true,
+  "pluginConfigs": {
+    "clear-relay@amont-agent": {
+      "options": {
+        "stateDir": "/Users/fredericrous/.local/state/amont-agent"
+      }
+    }
+  }
 }

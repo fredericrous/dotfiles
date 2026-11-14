@@ -19,5 +19,3 @@ source /Users/fredericrous/.config/broot/launcher/bash/br
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# bun completions
-[ -s "/Users/fredericrous/.bun/_bun" ] && source "/Users/fredericrous/.bun/_bun"
