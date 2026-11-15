@@ -35,7 +35,7 @@ cd "$retro_dir" || exit 1
 
 report="$retro_dir/$(date +%F).md"
 sections=$(mktemp) || exit 1
-trap 'rm -f "$sections" "$sections.json" "$sections.err"' EXIT
+trap 'rm -f "$sections" "$sections.json" "$sections.err" "$sections.ttd.g" "$sections.ttd.r" "$sections.ttd.err"' EXIT
 
 # This batch's own Claude runs are recorded under the slug of its cwd; a run
 # that tripped a hook must not be picked up as a session to review.
@@ -111,11 +111,77 @@ if [ "${models:-0}" -ge 2 ]; then
 }Harness reviewed on $models models: if ADR-0042's Log retires nothing, its Revisit trigger is met."
 fi
 
+# Time to done (ADR-0070, decisions time-to-done t01): greenpiste measures each
+# plan, relais publishes its run hours, and this joins them on the session id
+# and the session's window on the plan. Each tool is optional: absent
+# (`command -v`), older (exit 2, an unknown flag) or a schema it does not
+# know gives one line, and the report goes on.
+ttd="$sections.ttd"
+window=$(/bin/date -v-7d +%F)
+time_to_done() {
+  if ! command -v greenpiste >/dev/null 2>&1; then
+    printf 'greenpiste is not installed: no time-to-done measure.\n'
+    return
+  fi
+  greenpiste plan-review stats --time --json --since "$window" >"$ttd.g" 2>"$ttd.err"
+  rc=$?
+  if [ "$rc" -eq 2 ]; then
+    printf 'greenpiste is older than 4.2.0 (no plan-review stats --time): no time-to-done measure.\n'
+    return
+  elif [ "$rc" -ne 0 ]; then
+    bt='`'
+    printf 'greenpiste failed (exit %s): %s%s%s\n' "$rc" "$bt" "$(tail -n 1 "$ttd.err" | tr -d "$bt")" "$bt"
+    return
+  fi
+  if [ "$(jq -r '.schema' "$ttd.g" 2>/dev/null)" != 1 ]; then
+    printf 'greenpiste printed a schema this script does not know: no time-to-done measure.\n'
+    return
+  fi
+  printf '[]' >"$ttd.r"
+  relais_note=''
+  if ! command -v relais >/dev/null 2>&1; then
+    relais_note='relais is not installed: relais h is blank.'
+  else
+    relais report runs --json --since "$window" >"$ttd.r" 2>"$ttd.err"
+    rc=$?
+    if [ "$rc" -eq 2 ]; then
+      relais_note='relais is older than 0.62.0 (no report runs): relais h is blank.'
+      printf '[]' >"$ttd.r"
+    elif [ "$rc" -ne 0 ] || [ "$(jq -r '.schema' "$ttd.r" 2>/dev/null)" != 1 ]; then
+      relais_note="relais report runs failed (exit $rc) or printed an unknown schema: relais h is blank."
+      printf '[]' >"$ttd.r"
+    fi
+  fi
+  jq -r --slurpfile r "$ttd.r" '
+    def t: sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601;
+    ($r[0] | if type == "object" then .runs else [] end) as $runs
+    | def rh($p): [$runs[] | . as $u | select(any($p.sessions[];
+          .id == $u.root_session and ($u.started_at | t) >= (.from | t) and ($u.started_at | t) <= (.to | t))) | .hours] | add // 0;
+    (.plans | map(. + {relais_h: rh(.)})) as $ps
+    | "| plan | elapsed h | blocked h | relais h | person h | person stops | words × |",
+      "|---|---:|---:|---:|---:|---:|---:|",
+      ($ps[] | "| \(.repo)/\(.branch)\(if .reviewed then "" else " (unreviewed)" end) | \(.elapsed_h) | \(.blocked_h) | \(if ($runs|length) == 0 then "" else (.relais_h * 100 | round / 100) end) | \(.person_h) | \(.stops) | \(if .words then (.words.final / .words.round1 * 100 | round / 100) else "-" end) |"),
+      "",
+      "relais h overlaps blocked h (a foreground relais call is both): do not add them.",
+      (if ($runs|length) > 0 then
+        ([$runs[].hours] | add) as $all | ([$ps[].relais_h] | add // 0) as $hit
+        | "relais hours that matched no plan session: \((($all - $hit) * 100 | round) / 100) of \(($all * 100 | round) / 100)."
+       else empty end),
+      "Summary: \(.summary.finished) finished plans, median blocked \(.summary.median_blocked_h // "-") h, unattributed \(.summary.unattributed_share // "-") of blocked (unmapped \(.summary.unmapped_share // "-"))."
+  ' "$ttd.g" 2>/dev/null || printf 'The time-to-done join failed (jq).\n'
+  if [ -n "$relais_note" ]; then
+    printf '\n%s\n' "$relais_note"
+  fi
+}
+
 {
   printf 'candidates: %s\n\n# Retro %s\n\n' "$total" "$(date +%F)"
   if [ -n "$harness" ]; then
     printf '%s\n\n' "$harness"
   fi
+  printf '## Time to done\n\nPlans done since %s.\n\n' "$window"
+  time_to_done
+  printf '\n'
   if [ "$reviewed" -eq 0 ]; then
     printf 'No session flagged by amont-agent in the last 7 days.\n'
   else
