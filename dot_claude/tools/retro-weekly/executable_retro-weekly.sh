@@ -35,7 +35,7 @@ cd "$retro_dir" || exit 1
 
 report="$retro_dir/$(date +%F).md"
 sections=$(mktemp) || exit 1
-trap 'rm -f "$sections" "$sections.json" "$sections.err" "$sections.ttd.g" "$sections.ttd.r" "$sections.ttd.err"' EXIT
+trap 'rm -f "$sections" "$sections.json" "$sections.err" "$sections.ttd.g" "$sections.ttd.r" "$sections.ttd.err" "$sections.ttd.j" "$sections.ttd.s"' EXIT
 
 # This batch's own Claude runs are recorded under the slug of its cwd; a run
 # that tripped a hook must not be picked up as a session to review.
@@ -118,41 +118,57 @@ fi
 # know gives one line, and the report goes on.
 ttd="$sections.ttd"
 window=$(/bin/date -v-7d +%F)
+bt='`'
+# The last stderr line of a failed tool, in a code span.
+last_err() {
+  printf '%s%s%s' "$bt" "$(tail -n 1 "$ttd.err" | tr -d "$bt")" "$bt"
+}
 time_to_done() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf 'jq is not installed: no time-to-done measure.\n'
+    return
+  fi
   if ! command -v greenpiste >/dev/null 2>&1; then
     printf 'greenpiste is not installed: no time-to-done measure.\n'
     return
   fi
   greenpiste plan-review stats --time --json --since "$window" >"$ttd.g" 2>"$ttd.err"
   rc=$?
+  older_g='greenpiste is older than 4.2.0 (no plan-review stats --time, schema 1): no time-to-done measure.'
   if [ "$rc" -eq 2 ]; then
-    printf 'greenpiste is older than 4.2.0 (no plan-review stats --time): no time-to-done measure.\n'
+    printf '%s\n' "$older_g"
     return
   elif [ "$rc" -ne 0 ]; then
-    bt='`'
-    printf 'greenpiste failed (exit %s): %s%s%s\n' "$rc" "$bt" "$(tail -n 1 "$ttd.err" | tr -d "$bt")" "$bt"
+    printf 'greenpiste failed (exit %s): %s\n' "$rc" "$(last_err)"
     return
-  fi
-  if [ "$(jq -r '.schema' "$ttd.g" 2>/dev/null)" != 1 ]; then
-    printf 'greenpiste printed a schema this script does not know: no time-to-done measure.\n'
+  elif [ "$(jq -r '.schema' "$ttd.g" 2>/dev/null)" != 1 ]; then
+    printf '%s\n' "$older_g"
     return
   fi
   printf '[]' >"$ttd.r"
   relais_note=''
+  older_r='relais is older than 0.62.0 (no report runs, schema 1): relais h is blank.'
   if ! command -v relais >/dev/null 2>&1; then
     relais_note='relais is not installed: relais h is blank.'
   else
     relais report runs --json --since "$window" >"$ttd.r" 2>"$ttd.err"
     rc=$?
     if [ "$rc" -eq 2 ]; then
-      relais_note='relais is older than 0.62.0 (no report runs): relais h is blank.'
+      relais_note=$older_r
       printf '[]' >"$ttd.r"
-    elif [ "$rc" -ne 0 ] || [ "$(jq -r '.schema' "$ttd.r" 2>/dev/null)" != 1 ]; then
-      relais_note="relais report runs failed (exit $rc) or printed an unknown schema: relais h is blank."
+    elif [ "$rc" -ne 0 ]; then
+      relais_note="relais report runs failed (exit $rc): $(last_err); relais h is blank."
       printf '[]' >"$ttd.r"
+    elif [ "$(jq -r '.schema' "$ttd.r" 2>/dev/null)" != 1 ]; then
+      relais_note=$older_r
+      printf '[]' >"$ttd.r"
+    elif [ "$(jq '.runs | length' "$ttd.r" 2>/dev/null)" = 0 ]; then
+      relais_note='relais recorded no run in the window.'
     fi
   fi
-  jq -r --slurpfile r "$ttd.r" '
+  # The table goes to its own file and is printed only once jq succeeds, so
+  # a failure never leaves half a table.
+  if jq -r --slurpfile r "$ttd.r" '
     def t: sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z") | fromdateiso8601;
     ($r[0] | if type == "object" then .runs else [] end) as $runs
     | def rh($p): [$runs[] | . as $u | select(any($p.sessions[];
@@ -160,7 +176,7 @@ time_to_done() {
     (.plans | map(. + {relais_h: rh(.)})) as $ps
     | "| plan | elapsed h | blocked h | relais h | person h | person stops | words × |",
       "|---|---:|---:|---:|---:|---:|---:|",
-      ($ps[] | "| \(.repo)/\(.branch)\(if .reviewed then "" else " (unreviewed)" end) | \(.elapsed_h) | \(.blocked_h) | \(if ($runs|length) == 0 then "" else (.relais_h * 100 | round / 100) end) | \(.person_h) | \(.stops) | \(if .words then (.words.final / .words.round1 * 100 | round / 100) else "-" end) |"),
+      ($ps[] | "| \(.repo)/\(.branch)\(if .reviewed then "" else " (unreviewed)" end) | \(.elapsed_h) | \(.blocked_h) | \(if ($runs|length) == 0 then "" else (.relais_h * 100 | round / 100) end) | \(.person_h) | \(.stops) | \(if (.words.round1 // 0) > 0 then (.words.final / .words.round1 * 100 | round / 100) else "-" end) |"),
       "",
       "relais h overlaps blocked h (a foreground relais call is both): do not add them.",
       (if ($runs|length) > 0 then
@@ -168,11 +184,18 @@ time_to_done() {
         | "relais hours that matched no plan session: \((($all - $hit) * 100 | round) / 100) of \(($all * 100 | round) / 100)."
        else empty end),
       "Summary: \(.summary.finished) finished plans, median blocked \(.summary.median_blocked_h // "-") h, unattributed \(.summary.unattributed_share // "-") of blocked (unmapped \(.summary.unmapped_share // "-"))."
-  ' "$ttd.g" 2>/dev/null || printf 'The time-to-done join failed (jq).\n'
+  ' "$ttd.g" >"$ttd.j" 2>"$ttd.err"; then
+    cat "$ttd.j"
+  else
+    printf 'The time-to-done join failed: %s\n' "$(last_err)"
+  fi
   if [ -n "$relais_note" ]; then
     printf '\n%s\n' "$relais_note"
   fi
 }
+# Built before the report is opened: a slow or failing query never leaves
+# today's report cut short.
+time_to_done >"$ttd.s"
 
 {
   printf 'candidates: %s\n\n# Retro %s\n\n' "$total" "$(date +%F)"
@@ -180,7 +203,7 @@ time_to_done() {
     printf '%s\n\n' "$harness"
   fi
   printf '## Time to done\n\nPlans done since %s.\n\n' "$window"
-  time_to_done
+  cat "$sections.ttd.s"
   printf '\n'
   if [ "$reviewed" -eq 0 ]; then
     printf 'No session flagged by amont-agent in the last 7 days.\n'
