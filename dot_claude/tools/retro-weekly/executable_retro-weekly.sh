@@ -23,7 +23,7 @@ PATH="$HOME/.local/bin:$PATH"
 export PATH
 
 retro_dir="${RETRO_DIR:-$HOME/.claude/retro}"
-journal="$HOME/.claude/amont-agent/journal.log"
+journal="$HOME/.claude/greenpiste/journal.log"
 skill="${RETRO_SKILL:-$HOME/.claude/skills/retro/SKILL.md}"
 max_sessions=3
 max_bytes=104857600 # 100 MB; a 61 MB transcript cost under $1 read by jq windows
@@ -74,7 +74,7 @@ Sessions: $transcript" \
     --model sonnet --max-budget-usd "$budget_usd" \
     --permission-mode default --disallowedTools Write,Edit,NotebookEdit \
     --allowedTools "$tools" \
-    --add-dir "$HOME/.claude/projects" "$HOME/.claude/amont-agent" \
+    --add-dir "$HOME/.claude/projects" "$HOME/.claude/greenpiste" \
     --output-format json >"$sections.json" 2>"$sections.err" &&
     [ "$(jq -r '.is_error' "$sections.json" 2>/dev/null)" = false ]; then
     result=$(jq -r '.result // ""' "$sections.json")
@@ -104,7 +104,7 @@ fi
 # person checks the ADR's Log.
 # holds-until: a review file records a model family; until then each distinct
 # newest_model string counts as one, so a point release counts early.
-reviews="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/amont-agent/harness-review"
+reviews="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/greenpiste/harness-review"
 models=$(cat "$reviews"/*.json 2>/dev/null | jq -r '.newest_model // empty' 2>/dev/null | sort -u | grep -c .)
 if [ "${models:-0}" -ge 2 ]; then
   harness="${harness:+$harness
