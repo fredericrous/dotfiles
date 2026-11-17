@@ -1,10 +1,10 @@
 #!/bin/sh
-# Weekly retrospective over the sessions amont-agent flagged.
+# Weekly retrospective over the sessions greenbelay flagged.
 #
 # The retro skill cannot trigger itself: it judges a session after the fact,
 # and a SessionEnd hook gets 1.5 s. So launchd runs this every Monday
 # (com.fredericrous.retro-weekly). It picks the sessions of the last 7 days
-# with the most amont-agent deny/advise lines, runs the retro skill on each in
+# with the most greenbelay deny/advise lines, runs the retro skill on each in
 # a headless, read-only Claude call, and writes one report the person reads:
 # ~/.claude/retro/YYYY-MM-DD.md, first line `candidates: N`.
 #
@@ -23,12 +23,12 @@ PATH="$HOME/.local/bin:$PATH"
 export PATH
 
 retro_dir="${RETRO_DIR:-$HOME/.claude/retro}"
-journal="$HOME/.claude/greenpiste/journal.log"
+journal="$HOME/.claude/greenbelay/journal.log"
 skill="${RETRO_SKILL:-$HOME/.claude/skills/retro/SKILL.md}"
 max_sessions=3
 max_bytes=104857600 # 100 MB; a 61 MB transcript cost under $1 read by jq windows
 budget_usd=1
-tools='Read,Grep,Glob,Bash(jq:*),Bash(grep:*),Bash(amont-agent mine:*),Bash(sort:*),Bash(uniq:*),Bash(head:*),Bash(wc:*)'
+tools='Read,Grep,Glob,Bash(jq:*),Bash(grep:*),Bash(greenbelay mine:*),Bash(sort:*),Bash(uniq:*),Bash(head:*),Bash(wc:*)'
 
 mkdir -p "$retro_dir" || exit 1
 cd "$retro_dir" || exit 1
@@ -74,7 +74,7 @@ Sessions: $transcript" \
     --model sonnet --max-budget-usd "$budget_usd" \
     --permission-mode default --disallowedTools Write,Edit,NotebookEdit \
     --allowedTools "$tools" \
-    --add-dir "$HOME/.claude/projects" "$HOME/.claude/greenpiste" \
+    --add-dir "$HOME/.claude/projects" "$HOME/.claude/greenbelay" \
     --output-format json >"$sections.json" 2>"$sections.err" &&
     [ "$(jq -r '.is_error' "$sections.json" 2>/dev/null)" = false ]; then
     result=$(jq -r '.result // ""' "$sections.json")
@@ -91,12 +91,12 @@ done
 
 # ADR-0042 (harness.revisit-on-a-new-model): a model no harness review covers
 # starts one. --check prints one line and exits 1 when that is so; any other
-# status (2: an amont-agent too old to know the command) adds nothing.
+# status (2: an greenbelay too old to know the command) adds nothing.
 harness=''
-if command -v amont-agent >/dev/null 2>&1; then
-  out=$(amont-agent harness-review --check 2>/dev/null)
+if command -v greenbelay >/dev/null 2>&1; then
+  out=$(greenbelay harness-review --check 2>/dev/null)
   if [ $? -eq 1 ]; then
-    harness="Harness: $out. Run \`amont-agent harness-review\` (ADR-0042)."
+    harness="Harness: $out. Run \`greenbelay harness-review\` (ADR-0042)."
   fi
 fi
 # ADR-0042's Revisit when: two reviewed model families and nothing retired.
@@ -104,14 +104,14 @@ fi
 # person checks the ADR's Log.
 # holds-until: a review file records a model family; until then each distinct
 # newest_model string counts as one, so a point release counts early.
-reviews="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/greenpiste/harness-review"
+reviews="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/greenbelay/harness-review"
 models=$(cat "$reviews"/*.json 2>/dev/null | jq -r '.newest_model // empty' 2>/dev/null | sort -u | grep -c .)
 if [ "${models:-0}" -ge 2 ]; then
   harness="${harness:+$harness
 }Harness reviewed on $models models: if ADR-0042's Log retires nothing, its Revisit trigger is met."
 fi
 
-# Time to done (ADR-0070, decisions time-to-done t01): greenpiste measures each
+# Time to done (ADR-0070, decisions time-to-done t01): greenbelay measures each
 # plan, relais publishes its run hours, and this joins them on the session id
 # and the session's window on the plan. Each tool is optional: absent
 # (`command -v`), older (exit 2, an unknown flag) or a schema it does not
@@ -128,18 +128,18 @@ time_to_done() {
     printf 'jq is not installed: no time-to-done measure.\n'
     return
   fi
-  if ! command -v greenpiste >/dev/null 2>&1; then
-    printf 'greenpiste is not installed: no time-to-done measure.\n'
+  if ! command -v greenbelay >/dev/null 2>&1; then
+    printf 'greenbelay is not installed: no time-to-done measure.\n'
     return
   fi
-  greenpiste plan-review stats --time --json --since "$window" >"$ttd.g" 2>"$ttd.err"
+  greenbelay plan-review stats --time --json --since "$window" >"$ttd.g" 2>"$ttd.err"
   rc=$?
-  older_g='greenpiste is older than 4.2.0 (no plan-review stats --time, schema 1): no time-to-done measure.'
+  older_g='greenbelay gave no plan-review stats --time schema 1: no time-to-done measure.'
   if [ "$rc" -eq 2 ]; then
     printf '%s\n' "$older_g"
     return
   elif [ "$rc" -ne 0 ]; then
-    printf 'greenpiste failed (exit %s): %s\n' "$rc" "$(last_err)"
+    printf 'greenbelay failed (exit %s): %s\n' "$rc" "$(last_err)"
     return
   elif [ "$(jq -r '.schema' "$ttd.g" 2>/dev/null)" != 1 ]; then
     printf '%s\n' "$older_g"
@@ -206,9 +206,9 @@ time_to_done >"$ttd.s"
   cat "$sections.ttd.s"
   printf '\n'
   if [ "$reviewed" -eq 0 ]; then
-    printf 'No session flagged by amont-agent in the last 7 days.\n'
+    printf 'No session flagged by greenbelay in the last 7 days.\n'
   else
-    printf 'Sessions: the %s with the most amont-agent deny/advise lines in the last 7 days.\n' "$reviewed"
+    printf 'Sessions: the %s with the most greenbelay deny/advise lines in the last 7 days.\n' "$reviewed"
     cat "$sections"
   fi
 } >"$report"

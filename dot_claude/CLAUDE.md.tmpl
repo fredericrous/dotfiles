@@ -1,10 +1,10 @@
 An index (`guidance.always-on-is-an-index`): one line per item; the detail is in
-the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
+the named skill, rule (`aval rule <id>`), greenbelay rule, or memory file.
 
 ## Git stash policy (worktrees)
 
 - `refs/stash` is shared by every worktree: run `git stash list` and pick your
-  entry by its message before any stash operation (amont-agent `bare-stash-pop`).
+  entry by its message before any stash operation (greenbelay `bare-stash-pop`).
 - To set work aside, prefer a WIP commit; else `git stash push -u -m <tag>`, then
   `git stash apply <sha>` of that entry, then drop it.
 
@@ -17,7 +17,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 
 - Name the repository in each mutating git command (`git -C <repo>` or a subshell
   `(cd <repo> && …)`): a bare `cd` carries into the next call, batched siblings included.
-- Run `git status` before every commit and stage explicit paths (amont-agent `git-add-broad`).
+- Run `git status` before every commit and stage explicit paths (greenbelay `git-add-broad`).
 - Release: commit, check HEAD advanced, then tag, then push the tag — the
   `tag-release` skill. A tag is never force-pushed; a fix gets the next version.
 - Commit subjects: ≤ 50 characters, conventional prefix, no emoji (a hook adds it).
@@ -35,12 +35,12 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 - Assert that each scripted bulk-edit replacement landed: a non-matching replace
   exits 0.
 - Run a mutating command bare and check its effect, never through `tail`/`head`
-  (amont-agent `pipe-to-tail`; `relais-verified-push` for pushes).
+  (greenbelay `pipe-to-tail`; `relais-verified-push` for pushes).
 - Web/UI work is done when the rendered result is checked in a real browser (Chrome
   MCP or Playwright), not on CI green or a bundle grep; the agent's own browser checks
   run through the `browser-check` agent and the session reads its report, not screenshots.
 - A page for the person to look at, a preview or a question's options, opens through
-  `amont-agent open '<url>'` before they are asked (`work.page-shown-before-asked`, hook
+  `greenbelay open '<url>'` before they are asked (`work.page-shown-before-asked`, hook
   `ask-unopened-page`); never chrome-devtools MCP / Playwright, which are the agent's.
 - For a reported visual bug, reproduce the user's exact view (route, mode, zoom,
   state) before the fix and again after the deploy.
@@ -52,7 +52,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 - An approved plan is carried to production without asking — merge, release,
   deploy, observe (`work.agent-lands-the-plan`, ADR-0029); ask only what it left open.
 - Merge your own PRs on green CI and an approved review — the `merge-when-green`
-  skill (`work.merge-on-green`); `gh pr merge --auto` is refused (amont-agent).
+  skill (`work.merge-on-green`); `gh pr merge --auto` is refused (greenbelay).
 - Confirm destructive steps the plan does not name (`work.ask-only-what-the-plan-left-open`).
 
 ## Forgejo API ({{ .forge.host }})
@@ -67,7 +67,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 
 - The Bash tool runs zsh 5.9: write bash-compatible syntax, never fish
   (`claude_code_bash_tool_runs_zsh_not_fish.md`).
-- zsh traps are guarded by amont-agent (`equals-separator`, `glob-in-flag-value`,
+- zsh traps are guarded by greenbelay (`equals-separator`, `glob-in-flag-value`,
   `glob-no-match`); `status` is read-only — name the variable `rc`.
 - `grep` is ugrep with `--ignore-files`: a recursive grep skips gitignored paths;
   name the directory or pass `--no-ignore-files`. `find` is bfs; sed and coreutils
@@ -76,7 +76,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
 ## Reading files (overrides the bypass-mode default)
 
 - Read files with the Read tool, windowed on large ones; search with Grep/Glob;
-  trust Edit/Write results (amont-agent `whole-file-dump`, `read-unbounded-large`,
+  trust Edit/Write results (greenbelay `whole-file-dump`, `read-unbounded-large`,
   `file-reread`, `persisted-output-dump`).
 
 ## Working method
@@ -89,7 +89,7 @@ the named skill, rule (`aval rule <id>`), amont-agent rule, or memory file.
   plan mode + panel; more sessions or unstatable decisions → a programme map
   (`programme` skill, `work.programme-map`).
 - Before a worktree, a diagnosis or a release, check who works there:
-  `amont-agent board --repo <r>` (`work.board-before-starting`).
+  `greenbelay board --repo <r>` (`work.board-before-starting`).
 
 ## Relais routing
 
