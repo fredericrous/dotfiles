@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -74,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -87,7 +87,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -100,7 +100,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -113,7 +113,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
+            "args": [
+              "hook"
+            ],
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__relais__run",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -127,7 +140,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -172,7 +185,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -195,7 +208,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -208,7 +221,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -221,7 +234,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -234,7 +247,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -247,7 +260,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -272,7 +285,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -319,7 +332,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -333,7 +346,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/local/bin/amont-agent",
+            "command": "/usr/local/bin/greenbelay",
             "args": [
               "hook"
             ],
@@ -351,7 +364,7 @@
     "github@claude-plugins-official": true,
     "activity-vision@activity-vision-local": true,
     "claude-code-setup@anthropic-plugin-directory": true,
-    "clear-relay@greenpiste": true
+    "clear-relay@greenbelay": true
   },
   "extraKnownMarketplaces": {
     "fleet-lsp": {
@@ -373,22 +386,22 @@
         "path": "/Users/fredericrous/.local/state/activity-vision/claude-marketplace"
       }
     },
-    "greenpiste": {
+    "greenbelay": {
       "source": {
         "source": "directory",
-        "path": "/Users/fredericrous/.local/state/greenpiste/claude-marketplace"
+        "path": "/Users/fredericrous/.local/state/greenbelay/claude-marketplace"
       }
     }
   },
   "advisorModel": "opus",
-  "tui": "fullscreen",
-  "skipDangerousModePermissionPrompt": true,
-  "agentPushNotifEnabled": true,
   "pluginConfigs": {
-    "clear-relay@greenpiste": {
+    "clear-relay@greenbelay": {
       "options": {
-        "stateDir": "/Users/fredericrous/.local/state/greenpiste"
+        "stateDir": "/Users/fredericrous/.local/state/greenbelay"
       }
     }
-  }
+  },
+  "tui": "fullscreen",
+  "skipDangerousModePermissionPrompt": true,
+  "agentPushNotifEnabled": true
 }
