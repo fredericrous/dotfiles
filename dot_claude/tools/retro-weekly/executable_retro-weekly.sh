@@ -91,7 +91,7 @@ done
 
 # ADR-0042 (harness.revisit-on-a-new-model): a model no harness review covers
 # starts one. --check prints one line and exits 1 when that is so; any other
-# status (2: an greenbelay too old to know the command) adds nothing.
+# status (2: a greenbelay too old to know the command) adds nothing.
 harness=''
 if command -v greenbelay >/dev/null 2>&1; then
   out=$(greenbelay harness-review --check 2>/dev/null)
