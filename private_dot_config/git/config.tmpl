@@ -132,6 +132,6 @@
 [greengate "cluster"]
 	image = {{ .forge.host }}/fredericrous/gate-runner:main-6a5cf6b@sha256:01e1c07addc406df31d733458629abbbc34110a1d2b6463d572a75e4f9fb9b16
 	kubeconfig = ~/.config/greengate/kube/homelab.yaml
-	snapshotfetch = http://forgejo-http.forgejo.svc.cluster.local:3000/amont-snapshots/{repo}.git
-	snapshotremote = git@{{ .forge.host }}:amont-snapshots/{repo}.git
+	snapshotfetch = http://forgejo-http.forgejo.svc.cluster.local:3000/greengate-snapshots/{repo}.git
+	snapshotremote = git@{{ .forge.host }}:greengate-snapshots/{repo}.git
 	signer = in-cluster
