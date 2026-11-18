@@ -174,7 +174,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c '[ -n \"$(find . -maxdepth 3 -name package.json -not -path \"*/node_modules/*\" -exec grep -l \"@duro-app/\" {} + 2>/dev/null)\" ] || exit 0; [ -e .claude/hooks/duro-catalog.sh ] && exit 0; exec npx -y @duro-app/cli@^6 context'"
+            "command": "sh -c '[ -n \"$(find . -maxdepth 3 -name package.json -not -path \"*/node_modules/*\" -exec grep -l -e \"@greenharness/greenrack-\" -e \"@duro-app/\" {} + 2>/dev/null)\" ] || exit 0; [ -e .claude/hooks/greenrack-catalog.sh ] && exit 0; [ -e .claude/hooks/duro-catalog.sh ] && exit 0; exec npx -y @greenharness/greenrack-cli@^7 context'"
           }
         ]
       }
