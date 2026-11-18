@@ -7,4 +7,4 @@ Part of [Snapshot org and bot take greengate names](https://github.com/fredericr
 
 ## Code review
 
-- dotfiles: none — two config values and a skill's prose (backend, platform left out: no code)
+- chezmoi: none — two config values and a skill's prose (backend, platform left out: no code)
