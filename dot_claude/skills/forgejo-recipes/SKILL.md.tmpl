@@ -135,7 +135,7 @@ security find-generic-password -a greengate-bot -s {{ .forge.host }}-greengate-b
 security find-generic-password -a greengate-snapshots-pruner -s {{ .forge.host }}-greengate-snapshots-pruner-token -w   # write:repository
 ```
 
-Read either into a variable and pipe it; never echo it. A new bot follows the
+Read any of them into a variable and pipe it; never echo it. A new bot follows the
 same shape: restricted, private, one Keychain item per secret named
 `{{ .forge.host }}-<bot>-<what>`.
 
