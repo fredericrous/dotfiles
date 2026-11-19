@@ -3,6 +3,7 @@
   "env": {
     "ANTHROPIC_BASE_URL": "https://{{ .forge.host | replace "git." "cliproxy." }}",
     "RUST_BACKTRACE": "1",
+    "MCP_TIMEOUT": "60000",
     "KUBEBUILDER_ASSETS": "/Users/fredericrous/Library/Application Support/io.kubebuilder.envtest/k8s/1.29.0-darwin-amd64",
     "PATH": "/Users/fredericrous/.bun/bin:/Users/fredericrous/.local/share/pnpm:/Users/fredericrous/.sdkman/candidates/java/current/bin:/Users/fredericrous/go/bin:/usr/local/opt/go/libexec/bin:/Users/fredericrous/.antigravity/antigravity/bin:/Applications/Docker.app/Contents/Resources/bin:/Users/fredericrous/.codeium/windsurf/bin:/usr/local/opt/libpq/bin:/usr/local/opt/llvm/bin:/Users/fredericrous/.local/bin:/Applications/p4merge.app/Contents/MacOS:/Applications/Visual Studio Code.app/Contents/Resources/app/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/gnu-sed/libexec/gnubin:/usr/local/bin:/usr/local/sbin:/Users/fredericrous/.config/git/bin:/usr/local/opt/openjdk/bin:/usr/local/opt/mysql-client/bin:/usr/local/opt/fzf/bin:/Users/fredericrous/.cargo/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/MacGPG2/bin:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Applications/Wireshark.app/Contents/MacOS:/Applications/Ghostty.app/Contents/MacOS"
   },
@@ -24,6 +25,14 @@
       "mcp__claude-in-chrome__read_console_messages",
       "mcp__claude-in-chrome__find",
       "mcp__claude-in-chrome__get_page_text",
+      "mcp__claude-in-chrome__tabs_create_mcp",
+      "mcp__claude-in-chrome__navigate",
+      "mcp__claude-in-chrome__read_page",
+      "mcp__claude-in-chrome__form_input",
+      "mcp__claude-in-chrome__computer",
+      "mcp__claude-in-chrome__javascript_tool",
+      "mcp__claude-in-chrome__read_network_requests",
+      "mcp__claude-in-chrome__resize_window",
       "mcp__chrome-devtools__take_snapshot",
       "mcp__chrome-devtools__list_console_messages",
       "mcp__chrome-devtools__list_pages",
