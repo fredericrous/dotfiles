@@ -68,70 +68,74 @@
 {{- end }}
 [http "https://{{ .forge.host }}/"]
 	sslCert = /Users/fredericrous/certs/gitea-client-active.pem
-[amont "agent.bare-stash-pop"]
-	stance = deny
-[amont "agent.no-verify"]
-	stance = deny
-[amont "agent.gh-pr-merge-auto"]
-	stance = deny
-[amont "agent.git-add-broad"]
-	stance = observe
 [credential "https://github.com"]
 	helper = 
 	helper = !/usr/local/bin/gh auth git-credential
 [credential "https://gist.github.com"]
 	helper = 
 	helper = !/usr/local/bin/gh auth git-credential
-[amont "agent.stdin-hang"]
-	stance = deny
-[amont "agent.sed-in-place"]
-	stance = deny
-	shadow = 0.1
-[amont "agent.foreground-poll"]
-	stance = deny
-	shadow = 0.1
-[amont "agent.stat-bsd-format"]
-	stance = deny
-[amont "agent.worktree-remove-force"]
-	stance = deny
-[amont "agent.plan-review.dotfiles"]
-	path = ~/.local/share/chezmoi
-[amont "agent.glob-in-flag-value"]
-	stance = deny
-	shadow = 0.1
-[amont "agent.equals-separator"]
-	stance = deny
-	shadow = 0.1
-[amont "agent.implementation-review"]
-	stance = deny
-[amont "agent.push-preview"]
-	stance = deny
-[amont "agent.publish-without-skill"]
-	stance = deny
-[amont "agent.file-reread"]
-	stance = advise
-[amont "agent.lint-suppression-added"]
-	stance = deny
-[amont "agent.test-output-trimmed"]
-	stance = deny
-	shadow = 0.1
-[amont "agent.workspace-root-write"]
-	shadow = 0.1
-[amont "agent.plan-review"]
-	root = ~/Developer/Perso
-[amont "agent"]
-	opener = \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" {}
-[amont "agent.unsplit-expansion"]
-	stance = advise
-[amont "agent.read-unbounded-large"]
-	stance = deny
-[amont "agent.whole-file-dump"]
-	stance = deny
-[amont "agent.symbol-grep-not-lsp"]
-	denyAgents = relais:relais-worker-haiku-*
 [greengate "cluster"]
 	image = {{ .forge.host }}/fredericrous/gate-runner:main-6a5cf6b@sha256:01e1c07addc406df31d733458629abbbc34110a1d2b6463d572a75e4f9fb9b16
 	kubeconfig = ~/.config/greengate/kube/homelab.yaml
 	snapshotfetch = http://forgejo-http.forgejo.svc.cluster.local:3000/greengate-snapshots/{repo}.git
 	snapshotremote = git@{{ .forge.host }}:greengate-snapshots/{repo}.git
 	signer = in-cluster
+[greenbelay "bare-stash-pop"]
+	stance = deny
+[greenbelay "no-verify"]
+	stance = deny
+[greenbelay "gh-pr-merge-auto"]
+	stance = deny
+[greenbelay "git-add-broad"]
+	stance = observe
+[greenbelay "stdin-hang"]
+	stance = deny
+[greenbelay "sed-in-place"]
+	stance = deny
+	shadow = 0.1
+[greenbelay "foreground-poll"]
+	stance = deny
+	shadow = 0.1
+[greenbelay "stat-bsd-format"]
+	stance = deny
+[greenbelay "worktree-remove-force"]
+	stance = deny
+[greenbelay "plan-review.dotfiles"]
+	path = ~/.local/share/chezmoi
+[greenbelay "glob-in-flag-value"]
+	stance = deny
+	shadow = 0.1
+[greenbelay "equals-separator"]
+	stance = deny
+	shadow = 0.1
+[greenbelay "implementation-review"]
+	stance = deny
+[greenbelay "push-preview"]
+	stance = deny
+[greenbelay "publish-without-skill"]
+	stance = deny
+[greenbelay "file-reread"]
+	stance = advise
+[greenbelay "lint-suppression-added"]
+	stance = deny
+[greenbelay "test-output-trimmed"]
+	stance = deny
+	shadow = 0.1
+[greenbelay "workspace-root-write"]
+	shadow = 0.1
+[greenbelay "plan-review"]
+	root = ~/Developer/Perso
+[greenbelay]
+	opener = \"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" {}
+[greenbelay "unsplit-expansion"]
+	stance = advise
+[greenbelay "read-unbounded-large"]
+	stance = deny
+[greenbelay "whole-file-dump"]
+	stance = deny
+[greenbelay "symbol-grep-not-lsp"]
+	denyagents = relais:relais-worker-haiku-*
+[greengate]
+	snapshotDeps = reuse
+[greenbelay "clear-at-boundary"]
+	stance = deny
