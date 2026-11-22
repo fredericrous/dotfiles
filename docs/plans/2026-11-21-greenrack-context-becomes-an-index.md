@@ -9,7 +9,7 @@ This repository carries Phase 4: the entry hook, its test and the settings chang
 
 ## Code review
 
-- dotfiles: backend, lang:python, platform, architect (new entry.py module)
+- chezmoi: backend, lang:python, platform, architect (new entry.py module)
 
 ## Verification
 
