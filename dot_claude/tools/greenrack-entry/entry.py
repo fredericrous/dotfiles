@@ -41,6 +41,9 @@ FAIL_WINDOW = 600
 PRUNE_AGE = 7 * 86400
 SKIP_DIRS = {"node_modules", ".git"}
 MAX_DEPTH = 3
+# log.jsonl is cut to its last LOG_KEEP lines once it passes LOG_LIMIT bytes.
+LOG_LIMIT = 1_000_000
+LOG_KEEP = 2000
 DEFAULT_LABEL = "context for {root} (first touch this session)"
 FILE_TOOLS = {"Read", "Edit", "Write", "MultiEdit", "NotebookEdit"}
 
@@ -126,7 +129,10 @@ def read_event(stream):
             parse_constant = None
             memo = {}
 
-        value, _ = make_scanner(Context())(text.lstrip(), 0)
+        body = text.lstrip()
+        value, end = make_scanner(Context())(body, 0)
+        if body[end:].strip():
+            raise ValueError("trailing data")  # json.loads refuses it too
     except Exception:
         import json
 
@@ -233,6 +239,23 @@ def prune(state):
                 shutil.rmtree(path, ignore_errors=True)
         except OSError:
             pass
+    trim_log(state)
+
+
+def trim_log(state):
+    """Keep the log's last LOG_KEEP lines once it is over LOG_LIMIT bytes."""
+    path = os.path.join(state, "log.jsonl")
+    try:
+        if os.path.getsize(path) <= LOG_LIMIT:
+            return
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            lines = handle.readlines()[-LOG_KEEP:]
+        staged = f"{path}.{os.getpid()}.tmp"
+        with open(staged, "w", encoding="utf-8") as handle:
+            handle.writelines(lines)
+        os.replace(staged, path)
+    except OSError:
+        pass
 
 
 def claim(state, path):
@@ -281,8 +304,11 @@ def note_failure(state, root):
         pass
     try:
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "w", encoding="utf-8") as handle:
+        # Staged and renamed: a parallel call never reads a half-written counter.
+        staged = f"{path}.{os.getpid()}.tmp"
+        with open(staged, "w", encoding="utf-8") as handle:
             handle.write(f"{count + 1} {time.time()}")
+        os.replace(staged, path)
     except OSError:
         pass
 
@@ -306,13 +332,15 @@ def run_command(command, root, timeout):
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
+            # Fixed, not the locale's: a stray byte becomes U+FFFD and never raises.
+            encoding="utf-8",
+            errors="replace",
             start_new_session=True,
         )
     except OSError as error:
         return False, "", f"cannot start: {error}"
     try:
-        out, _ = child.communicate(timeout=timeout)
+        out, err = child.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         try:
             os.killpg(child.pid, signal.SIGKILL)
@@ -324,14 +352,24 @@ def run_command(command, root, timeout):
             pass
         return False, "", "timeout"
     if child.returncode != 0:
-        return False, "", f"exit {child.returncode}"
+        # The command's own last word says why: a registry error, a missing package.
+        lines = [line.strip() for line in err.splitlines() if line.strip()]
+        why = f": {lines[-1][:200]}" if lines else ""
+        return False, "", f"exit {child.returncode}{why}"
     return True, out, ""
 
 
 def fetch(options, state, root, marker, event, session, agent):
     """Run the command once. Returns the context text, or None (marker released on failure)."""
     started = time.time()
-    ok, out, reason = run_command(options["command"], root, options["timeout"])
+    try:
+        ok, out, reason = run_command(options["command"], root, options["timeout"])
+    except Exception as error:
+        # Never leave a claimed marker behind: the next call must be able to retry.
+        release(marker)
+        note_failure(state, root)
+        log(state, event=event, session=session, agent=agent, root=root, outcome=f"failed: {error}")
+        raise
     elapsed = int((time.time() - started) * 1000)
     if not ok:
         release(marker)
