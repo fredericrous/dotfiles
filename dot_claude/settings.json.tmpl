@@ -43,6 +43,35 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Read|Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": [
+              "-I",
+              "/Users/fredericrous/.claude/tools/greenrack-entry/entry.py",
+              "--name",
+              "greenrack-entry",
+              "--needle",
+              "@greenharness/greenrack-",
+              "--needle",
+              "@duro-app/",
+              "--label",
+              "greenrack index for {root} (first touch this session)",
+              "--timeout",
+              "10",
+              "--",
+              "npx",
+              "-y",
+              "@greenharness/greenrack-cli@^7",
+              "context"
+            ],
+            "timeout": 15
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -183,7 +212,30 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh -c '[ -n \"$(find . -maxdepth 3 -name package.json -not -path \"*/node_modules/*\" -exec grep -l -e \"@greenharness/greenrack-\" -e \"@duro-app/\" {} + 2>/dev/null)\" ] || exit 0; [ -e .claude/hooks/greenrack-catalog.sh ] && exit 0; [ -e .claude/hooks/duro-catalog.sh ] && exit 0; exec npx -y @greenharness/greenrack-cli@^7 context'"
+            "command": "python3",
+            "args": [
+              "-I",
+              "/Users/fredericrous/.claude/tools/greenrack-entry/entry.py",
+              "--session-start",
+              "--name",
+              "greenrack-entry",
+              "--needle",
+              "@greenharness/greenrack-",
+              "--needle",
+              "@duro-app/",
+              "--own-hook",
+              ".claude/hooks/greenrack-catalog.sh",
+              "--own-hook",
+              ".claude/hooks/duro-catalog.sh",
+              "--timeout",
+              "10",
+              "--",
+              "npx",
+              "-y",
+              "@greenharness/greenrack-cli@^7",
+              "context"
+            ],
+            "timeout": 15
           }
         ]
       }

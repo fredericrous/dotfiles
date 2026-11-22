@@ -27,8 +27,8 @@ Sessions untouched for seven days are pruned.
 """
 
 # Only what the common call needs is imported here: most calls find their
-# marker and stop. subprocess, shutil and signal load where they are used.
-import json
+# marker and stop. json (with re), subprocess, shutil and signal load where
+# they are used: json alone is about a third of a call's own cost.
 import os
 import sys
 import time
@@ -104,7 +104,42 @@ def digest(text):
     return f"{tail}-{zlib.crc32(text.encode('utf-8')):08x}"
 
 
+def read_event(stream):
+    """The hook's JSON object from stdin, or None when it is not one.
+
+    CPython's C scanner reads it without importing json, and so without re:
+    the same parser json.loads uses. The scanner's private interface moves
+    between Python versions (3.15 added `array_hook`), so any trouble falls
+    back to json itself: slower, never wrong.
+    """
+    text = stream.read()
+    try:
+        from _json import make_scanner
+
+        class Context:
+            strict = True
+            object_hook = None
+            object_pairs_hook = None
+            array_hook = None
+            parse_float = float
+            parse_int = int
+            parse_constant = None
+            memo = {}
+
+        value, _ = make_scanner(Context())(text.lstrip(), 0)
+    except Exception:
+        import json
+
+        try:
+            value = json.loads(text)
+        except ValueError:
+            return None
+    return value if isinstance(value, dict) else None
+
+
 def log(state, **fields):
+    import json
+
     try:
         os.makedirs(state, exist_ok=True)
         fields["ts"] = round(time.time(), 3)
@@ -362,6 +397,8 @@ def on_tool_call(data, options, state):
         return
     text = fetch(options, state, root, marker, "tool", session, agent)
     if text:
+        import json
+
         label = options["label"].replace("{root}", root)
         sys.stdout.write(
             json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "additionalContext": f"{label}\n{text}"}})
@@ -371,11 +408,8 @@ def on_tool_call(data, options, state):
 
 def main(argv, stdin):
     options = parse_args(argv)
-    try:
-        data = json.load(stdin)
-    except ValueError:
-        return
-    if not isinstance(data, dict):
+    data = read_event(stdin)
+    if data is None:
         return
     state = state_dir(options["name"])
     if options["session_start"]:

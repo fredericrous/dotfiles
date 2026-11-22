@@ -323,6 +323,41 @@ class FailureTests(EntryCase):
         self.assertIn("entry:", done.stderr)
 
 
+class FastPathTests(EntryCase):
+    def test_a_call_that_finds_its_marker_imports_neither_json_nor_re(self):
+        # A silent fallback to json would keep every test green and cost every
+        # tool call about 18 ms: pin the fast path itself.
+        root = self.repo("app", package=True)
+        self.run_entry(self.read(root))
+        done = subprocess.run(
+            [sys.executable, "-X", "importtime", "-I", ENTRY, "--name", "entry-test"]
+            + ["--needle", NEEDLE, "--", sys.executable, "-I", self.fake, "ok"],
+            input=json.dumps(self.read(root)),
+            capture_output=True,
+            text=True,
+            env=self.env,
+        )
+        imported = [
+            line.rsplit("|", 1)[-1].strip()
+            for line in done.stderr.splitlines()
+            if line.startswith("import time:")
+        ]
+        self.assertEqual(done.stdout, "")
+        self.assertIn("zlib", imported)
+        self.assertNotIn("json", imported)
+        self.assertNotIn("re", imported)
+
+    def test_escaped_characters_in_a_path_still_read(self):
+        root = self.repo("app", package=True)
+        target = os.path.join(root, "src", "é.ts")
+        done = self.run_entry(self.read(root, tool_input={"file_path": target}))
+        self.assertIn(f"index for {root}", self.context_of(done))
+
+    def test_a_payload_the_scanner_cannot_read_is_left_to_json(self):
+        done = self.run_entry('{"session_id": "s", ')
+        self.assertEqual((done.returncode, done.stdout), (0, ""))
+
+
 class ConcurrencyTests(EntryCase):
     def test_parallel_calls_print_the_index_once(self):
         root = self.repo("app", package=True)
@@ -344,33 +379,36 @@ class ConcurrencyTests(EntryCase):
 
 class TimingTests(EntryCase):
     @unittest.skipUnless(os.environ.get("ENTRY_TIMING"), "set ENTRY_TIMING=1 to measure")
-    def test_calls_after_the_first_take_under_60_ms_of_cpu_at_p95(self):
-        # CPU time of the child (and its git), not the wall clock: a busy
-        # machine stretches the wall clock but not the work a call does.
-        import resource
-
+    def test_a_call_adds_little_to_an_empty_interpreter_start(self):
+        # What a call can control is its own work, not how fast this machine
+        # starts Python: compare the median wall clock of a call that finds its
+        # marker with the median of an empty start, taken alternately so a
+        # busy host stretches both.
         root = self.repo("app", package=True)
         self.run_entry(self.read(root))
-        samples = []
-        for _ in range(100):
-            before = resource.getrusage(resource.RUSAGE_CHILDREN)
-            self.run_entry(self.read(root))
-            after = resource.getrusage(resource.RUSAGE_CHILDREN)
-            samples.append((after.ru_utime - before.ru_utime) + (after.ru_stime - before.ru_stime))
-        samples.sort()
-        p95 = samples[94]
-        baseline = []
-        for _ in range(20):
-            before = resource.getrusage(resource.RUSAGE_CHILDREN)
-            subprocess.run([sys.executable, "-I", "-c", "pass"], check=True)
-            after = resource.getrusage(resource.RUSAGE_CHILDREN)
-            baseline.append((after.ru_utime - before.ru_utime) + (after.ru_stime - before.ru_stime))
-        baseline.sort()
+        payload = json.dumps(self.read(root))
+        call = self.argv()
+        empty = [sys.executable, "-I", "-c", "pass"]
+
+        def once(argv: list[str]) -> float:
+            started = time.perf_counter()
+            subprocess.run(argv, input=payload, capture_output=True, text=True, env=self.env, check=True)
+            return (time.perf_counter() - started) * 1000
+
+        calls: list[float] = []
+        starts: list[float] = []
+        for _ in range(60):
+            calls.append(once(call))
+            starts.append(once(empty))
+        calls.sort()
+        starts.sort()
+        overhead = calls[30] - starts[30]
         print(
-            f"p95 {p95 * 1000:.1f} ms of cpu per call; an empty python start p95 {baseline[18] * 1000:.1f} ms",
+            f"call p50 {calls[30]:.1f} ms, p95 {calls[56]:.1f} ms; empty start p50 {starts[30]:.1f} ms; "
+            f"overhead {overhead:.1f} ms",
             file=sys.stderr,
         )
-        self.assertLess(p95, 0.060)
+        self.assertLess(overhead, 15)
 
 
 if __name__ == "__main__":
