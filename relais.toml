@@ -33,7 +33,7 @@ max_agents_total = 24
 # Nothing here runs until a person grants trust for it.
 # required blocks execution when missing; optional gaps are reported.
 [integrations]
-aval = "optional"
+greentopo = "optional"
 amont = "required"
 amont_agent = "optional"
 
