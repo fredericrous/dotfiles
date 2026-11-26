@@ -1,7 +1,7 @@
 ---
 name: Explore
 description: Read-only search agent for broad fan-out searches — when answering means sweeping many files, directories, or naming conventions and you only need the conclusion, not the file dumps. It reads excerpts rather than whole files, so it locates code; it doesn't review or audit it. Specify search breadth: "medium" for moderate exploration, "very thorough" for multiple locations and naming conventions.
-tools: Read, Grep, Glob, LSP, Bash, WebSearch, WebFetch, Skill, mcp__aval__aval_relevant, mcp__aval__aval_resolve, mcp__aval__aval_rule, mcp__aval__aval_rules, mcp__aval__aval_show
+tools: Read, Grep, Glob, LSP, Bash, WebSearch, WebFetch, Skill, mcp__greentopo__greentopo_relevant, mcp__greentopo__greentopo_resolve, mcp__greentopo__greentopo_rule, mcp__greentopo__greentopo_rules, mcp__greentopo__greentopo_show
 model: sonnet
 ---
 
